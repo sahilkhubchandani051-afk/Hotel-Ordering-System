@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Create Direct Sales Order</h1>
+    <a href="/admin/dashboard" class="btn btn-secondary">Cancel</a>
+</div>
+
+<form action="/admin/direct_sales" method="POST" id="salesOrderForm">
+    <!-- Customer Selection -->
+    <div class="card">
+        <h3>Customer Details</h3>
+        <div style="max-width: 500px; position: relative;">
+            <label class="form-label">Search & Select Customer</label>
+            <div class="searchable-dropdown">
+                <input type="text" id="customerSearchInput" class="form-control"
+                    placeholder="Type name, email or code..." autocomplete="off" onfocus="showCustomerDropdown()"
+                    oninput="filterCustomers()">
+                <div id="customerDropdownOptions" class="dropdown-options" style="display: none;">
+                    {% for customer in customers %}
+                    <div class="dropdown-option" data-email="{{ customer.email }}"
+                        data-search="{{ customer.name|lower }} {{ customer.email|lower }}"
+                        data-favorite="{{ 'true' if customer.is_favorite else 'false' }}"
+                        onclick="selectCustomer('{{ customer.email }}', '{{ customer.business_name or customer.name }} ({{ customer.email }})', this.getAttribute('data-favorite'))">
+                        <strong>{{ customer.business_name or customer.name }}</strong>
+                        {% if customer.is_favorite %}<span style="color: #f59e0b;">★</span>{% endif %}<br>
+                        <small style="color: var(--text-secondary);">{{ customer.email }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <input type="hidden" name="customer_email" id="customerSelect" required>
+        </div>
+    </div>
+
+    <!-- Items Section -->
+    <div class="card">
+        <h3>Order Items</h3>
+        <div style="overflow-x: auto;">
+            <table id="itemsTable">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th style="width: 120px;">Requested Qty</th>
+                        <th style="width: 150px;">Rate (₹)</th>
+                        <th style="width: 150px;">Amount (₹)</th>
+                        <th style="width: 50px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="itemsBody">
+                    <tr class="item-row">
+                        <td style="position: relative;">
+                            <!-- Searchable Product Input -->
+                            <div class="searchable-dropdown product-search-container">
+                                <input type="text" class="form-control product-search-input"
+                                    placeholder="Type to search product..." autocomplete="off"
+                                    onfocus="showProductDropdown(this)" oninput="filterProducts(this)">
+                                <input type="hidden" name="product_id" class="product-id-input" required>
+
+                                <div class="dropdown-options product-dropdown-options" style="display: none;">
+                                    {% for product in products %}
+                                    <div class="dropdown-option" data-id="{{ product.id }}"
+                                        data-search="{{ product.name|lower }}" data-name="{{ product.name }}"
+                                        data-stock="{{ product.shop_stock | default(0) }}"
+                                        onclick="selectProduct(this)">
+                                        <strong>{{ product.name }}</strong> ({{ product.unit }})<br>
+                                        <small>Stock: {{ product.shop_stock | default(0) }} | Rate: ₹{{ product.rate
+                                            }}</small>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="shop-stock-info"
+                                style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px; display: none;">
+                                Stock: <span class="stock-value">0</span>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="number" name="qty" class="form-control qty-input" step="0.01" min="0.01"
+                                required value="1" oninput="calculateRow(this)">
+                            <div class="stock-warning"
+                                style="display: none; color: #d97706; font-size: 0.75rem; margin-top: 4px;">
+                                ⚠️ Exceeds stock
+                            </div>
+                        </td>
+                        <td>
+                            <input type="number" name="rate" class="form-control rate-input" step="0.01" min="0"
+                                required oninput="calculateRow(this)">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control row-amount" readonly value="0.00"
+                                style="background: #f1f5f9;">
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)"
+                                title="Remove Item">×</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 1rem;">
+            <button type="button" class="btn" style="background: var(--primary); color: white;" onclick="addRow()">+ Add
+                Item</button>
+        </div>
+    </div>
+
+    <!-- Summary & Action -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 1.25rem; font-weight: 700;">
+                Total Amount: <span id="grandTotal" style="color: var(--secondary);">₹0.00</span>
+            </div>
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1.1rem;">Generate
+                Invoice</button>
+        </div>
+    </div>
+</form>
+
+<!-- Confirmation Modal -->
+<div id="confirmationModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+    <div
+        style="background: white; padding: 2rem; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h3 style="margin-top: 0; color: var(--primary);">Confirm Invoice</h3>
+        <div style="margin: 1.5rem 0; font-size: 1rem;">
+            <p><strong>Customer:</strong> <span id="modalCustomerName"></span></p>
+            <p><strong>Total Items:</strong> <span id="modalItemCount"></span></p>
+            <div style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px;">
+                <p style="font-size: 1.25rem; font-weight: bold; margin: 0;">Total: <span id="modalTotalAmount"></span>
+                </p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="confirmAndSubmit()">Confirm & Generate</button>
+        </div>
+    </div>
+</div>
+
+<script id="product-data" type="application/json">
+        {
+            {% for product in products %}
+            "{{ product.id }}": { 
+                "rate": {{ product.rate }}, 
+                "favorite_price": {{ product.favorite_price or 'null' }},
+                "unit": "{{ product.unit }}", 
+                "shop_stock": {{ product.shop_stock | default(0) }} 
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        }
+    </script>
+
+<script>
+    const productData = JSON.parse(document.getElementById('product-data').textContent);
+    let currentCustomerIsFavorite = false;
+
+    function addRow() {
+        const tbody = document.getElementById('itemsBody');
+        const firstRow = tbody.querySelector('.item-row');
+        // We can't just clone deeply because of ID conflicts if we used IDs, but here we use classes.
+        // However, the dropdown logic needs fresh event listeners or simple inline attributes.
+        // The searchable dropdown structure is complex to clone and reset.
+        // Easiest way: HTML string template or cloning and rigorous resetting.
+
+        const newRow = firstRow.cloneNode(true);
+
+        // Reset Inputs
+        newRow.querySelector('.product-id-input').value = "";
+        newRow.querySelector('.product-search-input').value = "";
+        newRow.querySelector('.qty-input').value = "1";
+        newRow.querySelector('.rate-input').value = "";
+        newRow.querySelector('.row-amount').value = "0.00";
+        newRow.querySelector('.stock-value').innerText = "0";
+        newRow.querySelector('.shop-stock-info').style.display = 'none';
+        newRow.querySelector('.stock-warning').style.display = 'none';
+        newRow.querySelector('.product-dropdown-options').style.display = 'none';
+
+        tbody.appendChild(newRow);
+    }
+
+    function removeRow(btn) {
+        const tbody = document.getElementById('itemsBody');
+        if (tbody.querySelectorAll('.item-row').length > 1) {
+            btn.closest('tr').remove();
+            updateGrandTotal();
+        } else {
+            alert("At least one item is required.");
+        }
+    }
+
+    function showProductDropdown(input) {
+        // Hide other dropdowns
+        document.querySelectorAll('.product-dropdown-options').forEach(el => el.style.display = 'none');
+
+        const dropdown = input.closest('.searchable-dropdown').querySelector('.product-dropdown-options');
+        dropdown.style.display = 'block';
+        filterProducts(input);
+    }
+
+    function filterProducts(input) {
+        const filter = input.value.toLowerCase();
+        const dropdown = input.closest('.searchable-dropdown').querySelector('.product-dropdown-options');
+        const options = dropdown.getElementsByClassName('dropdown-option');
+        let visibleCount = 0;
+
+        for (let i = 0; i < options.length; i++) {
+            const search = options[i].getAttribute('data-search');
+            if (search.indexOf(filter) > -1) {
+                options[i].style.display = "";
+                visibleCount++;
+            } else {
+                options[i].style.display = "none";
+            }
+        }
+        dropdown.style.display = visibleCount > 0 ? 'block' : 'none';
+    }
+
+    function selectProduct(element) {
+        const container = element.closest('.searchable-dropdown');
+        const row = element.closest('tr');
+
+        const productId = element.dataset.id;
+        const productName = element.dataset.name;
+
+        container.querySelector('.product-search-input').value = productName;
+        container.querySelector('.product-id-input').value = productId;
+        container.querySelector('.product-dropdown-options').style.display = 'none';
+
+        updateRate(row, productId);
+    }
+
+    function updateRate(row, productId) {
+        const rateInput = row.querySelector('.rate-input');
+        const stockInfo = row.querySelector('.shop-stock-info');
+        const stockValue = row.querySelector('.stock-value');
+
+        if (productId && productData[productId]) {
+            const data = productData[productId];
+
+            // Determine rate based on favorite status
+            let finalRate = data.rate;
+            if (currentCustomerIsFavorite && data.favorite_price !== null && data.favorite_price > 0) {
+                finalRate = data.favorite_price;
+            }
+
+            rateInput.value = finalRate;
+            if (stockValue) stockValue.innerText = data.shop_stock;
+            if (stockInfo) stockInfo.style.display = 'block';
+        } else {
+            rateInput.value = "";
+            if (stockInfo) stockInfo.style.display = 'none';
+        }
+        calculateRow(rateInput);
+    }
+
+    // Modal Logic
+    function closeModal() {
+        document.getElementById('confirmationModal').style.display = 'none';
+    }
+
+    function confirmAndSubmit() {
+        const form = document.getElementById('salesOrderForm');
+        form.dataset.confirmed = 'true';
+        form.requestSubmit(); // Triggers the submit listener again, but this time confirmed=true
+    }
+
+    // Global click listener to close product dropdowns
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.product-search-container')) {
+            document.querySelectorAll('.product-dropdown-options').forEach(el => el.style.display = 'none');
+        }
+    });
+
+    function calculateRow(input) {
+        const row = input.closest('tr');
+        const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+        const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
+        const productId = row.querySelector('.product-id-input').value; // Changed from select
+        const amount = qty * rate;
+
+        row.querySelector('.row-amount').value = amount.toFixed(2);
+
+        // Stock Warning
+        const warningDiv = row.querySelector('.stock-warning');
+        const qtyInput = row.querySelector('.qty-input');
+        if (warningDiv && productId && productData[productId]) {
+            const stock = productData[productId].shop_stock;
+            if (qty > stock && stock >= 0) {
+                warningDiv.style.display = 'block';
+                qtyInput.style.borderColor = '#d97706';
+                qtyInput.style.backgroundColor = '#fffbeb';
+            } else {
+                warningDiv.style.display = 'none';
+                qtyInput.style.borderColor = '';
+                qtyInput.style.backgroundColor = '';
+            }
+        }
+
+        updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+        let total = 0;
+        document.querySelectorAll('.row-amount').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        document.getElementById('grandTotal').innerText = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Initialize first row calculation
+    window.onload = function () {
+        updateGrandTotal();
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.searchable-dropdown')) {
+                document.getElementById('customerDropdownOptions').style.display = 'none';
+            }
+        });
+    };
+
+    function showCustomerDropdown() {
+        document.getElementById('customerDropdownOptions').style.display = 'block';
+        filterCustomers();
+    }
+
+    function filterCustomers() {
+        const input = document.getElementById('customerSearchInput');
+        const filter = input.value.toLowerCase();
+        const options = document.getElementById('customerDropdownOptions');
+        const items = options.getElementsByClassName('dropdown-option');
+        let visibleCount = 0;
+
+        for (let i = 0; i < items.length; i++) {
+            const search = items[i].getAttribute('data-search');
+            if (search.indexOf(filter) > -1) {
+                items[i].style.display = "";
+                visibleCount++;
+            } else {
+                items[i].style.display = "none";
+            }
+        }
+        options.style.display = visibleCount > 0 ? 'block' : 'none';
+    }
+
+    function selectCustomer(email, displayName, isFav) {
+        document.getElementById('customerSelect').value = email;
+        document.getElementById('customerSearchInput').value = displayName;
+        document.getElementById('customerDropdownOptions').style.display = 'none';
+
+        // Set global favorite status
+        currentCustomerIsFavorite = (isFav === 'true');
+
+        // Re-calculate rates 
+        document.querySelectorAll('.item-row').forEach(row => {
+            const pidInput = row.querySelector('.product-id-input');
+            if (pidInput && pidInput.value) {
+                updateRate(row, pidInput.value);
+            }
+        });
+    }
+
+    // Duplication Check
+    document.getElementById('salesOrderForm').addEventListener('submit', async function (e) {
+        if (this.dataset.confirmed === 'true') return;
+
+        e.preventDefault();
+
+        const customer_email = document.getElementById('customerSelect').value;
+        if (!customer_email) {
+            alert("Please select a customer.");
+            return;
+        }
+        const rows = document.querySelectorAll('.item-row');
+        const items = [];
+        let total = 0;
+
+        rows.forEach(row => {
+            const product_id = row.querySelector('.product-id-input').value;
+            const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+            const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
+            if (product_id && qty > 0) {
+                items.push({ product_id, qty, rate });
+                total += qty * rate;
+            }
+        });
+
+        if (items.length === 0) {
+            alert("Please add at least one item.");
+            return;
+        }
+
+        try {
+            const resp = await fetch('/api/check-invoice-duplicate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer_email: customer_email,
+                    items: items,
+                    total_amount: total
+                })
+            });
+            const data = await resp.json();
+
+            if (data.exists) {
+                const proceed = confirm("A similar invoice today already exists for this customer. Do you want to continue?");
+                if (!proceed) return;
+            }
+
+            // Show Confirmation Modal Instead of direct submit
+            document.getElementById('modalCustomerName').innerText = document.getElementById('customerSearchInput').value;
+            document.getElementById('modalItemCount').innerText = items.length;
+            document.getElementById('modalTotalAmount').innerText = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
+            document.getElementById('confirmationModal').style.display = 'flex';
+
+        } catch (err) {
+            console.error(err);
+            // Fallback if duplicate check fails
+            const proceed = confirm("Proceed with Invoice Generation?");
+            if (proceed) {
+                this.dataset.confirmed = 'true';
+                this.submit();
+            }
+        }
+    });
+</script>
+
+<style>
+    .item-row td {
+        vertical-align: middle;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    /* Searchable Dropdown Styles */
+    .searchable-dropdown {
+        position: relative;
+        width: 100%;
+    }
+
+    .dropdown-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: 250px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        z-index: 1000;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    .dropdown-option {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.2s;
+    }
+
+    .dropdown-option:hover {
+        background: #f8fafc;
+    }
+
+    .dropdown-option strong {
+        color: var(--primary);
+    }
+</style>
+{% endblock %}

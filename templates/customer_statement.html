@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style>
+    /* Page background */
+    body {
+        background-color: #F8FAFC;
+    }
+
+    /* Section Header */
+    .section-header {
+        font-size: 11px;
+        font-weight: 800;
+        color: #94A3B8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+        padding-left: 4px;
+        margin-top: 1.5rem;
+    }
+
+    /* Modern Hero Balance Card */
+    .summary-card {
+        background: linear-gradient(135deg, #1A202C 0%, #4C51BF 100%);
+        border-radius: 20px;
+        padding: 1.75rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        color: #FFFFFF;
+        text-align: center;
+    }
+
+    .summary-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.8);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+    }
+
+    .summary-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: #FFFFFF;
+    }
+
+    /* High-Density Ledger Rows */
+    .statement-feed {
+        background: #FFFFFF;
+        border-radius: 12px;
+        border: 1px solid #EDF2F7;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .statement-row {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #EDF2F7;
+        text-decoration: none;
+        background: #FFFFFF;
+        height: 64px;
+        box-sizing: border-box;
+    }
+
+    .statement-row:last-child {
+        border-bottom: none;
+    }
+
+    /* Left: Icon */
+    .row-icon {
+        width: 36px;
+        height: 36px;
+        background: #EEF2FF;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        flex-shrink: 0;
+        color: #4C51BF;
+    }
+
+    /* Center: Meta */
+    .row-center {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
+    }
+
+    .row-ref {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1E293B;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .row-date {
+        font-size: 11px;
+        color: #94A3B8;
+        font-weight: 500;
+    }
+
+    /* Right: Financials */
+    .row-right {
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-left: 12px;
+    }
+
+    .row-amount {
+        font-size: 14px;
+        font-weight: 700;
+        color: #E53E3E;
+        /* Debit/Invoice color */
+    }
+
+    .row-amount.credit {
+        color: #38A169;
+    }
+
+    .row-closing {
+        font-size: 11px;
+        color: #94A3B8;
+        font-weight: 500;
+    }
+
+    /* Filter Card */
+    .filter-card {
+        background: #FFFFFF;
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid #EDF2F7;
+        margin-bottom: 2rem;
+    }
+
+    .filter-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #64748B;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .filter-input {
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 13px;
+        width: 100%;
+        color: #1E293B;
+    }
+
+    .btn-apply {
+        background: #4C51BF;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    @media (min-width: 768px) {
+        .btn-apply {
+            width: auto;
+            margin-top: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding-top: 1rem; max-width: 600px; margin: 0 auto;">
+    <!-- Navigation -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="/customer/dashboard"
+                style="text-decoration: none; color: #4C51BF; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                <span>❮</span> BACK
+            </a>
+            <span
+                style="font-size: 14px; font-weight: 800; color: #1E293B; text-transform: uppercase; letter-spacing: 1px;">Statement</span>
+        </div>
+        <a href="/customer/statement/export?date_from={{ date_from }}&date_to={{ date_to }}"
+            style="text-decoration: none; background: #FFFFFF; border: 1px solid #4C51BF; color: #4C51BF; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            EXPORT
+        </a>
+    </div>
+
+    <!-- Outstanding Balance Card -->
+    <div class="summary-card">
+        <div class="summary-label">Outstanding Balance</div>
+        <div class="summary-value">
+            ₹{% if ledger %}{{ "%.2f"|format(ledger[-1].closing_bal) }}{% else %}0.00{% endif %}
+        </div>
+    </div>
+
+    <div class="section-header">Recent Transactions</div>
+
+    <!-- Transaction List -->
+    <div class="statement-feed">
+        {% if ledger %}
+        {% for entry in ledger %}
+        <a href="/invoice/po/{{ entry.id }}" class="statement-row">
+            <div class="row-icon">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+
+            <div class="row-center">
+                <div class="row-ref">{{ entry.display_id }}</div>
+                <div class="row-date">{{ entry.date }}</div>
+            </div>
+
+            <div class="row-right">
+                <div class="row-amount">₹{{ "%.2f"|format(entry.inv_amt) }}</div>
+                <div class="row-closing">Bal: ₹{{ "%.2f"|format(entry.closing_bal) }}</div>
+            </div>
+        </a>
+        {% endfor %}
+        {% else %}
+        <div style="padding: 3rem; text-align: center; color: #94A3B8; font-size: 14px;">
+            No transactions found for this period.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Date Filters -->
+    <div class="section-header">Filter by Date</div>
+    <div class="filter-card">
+        <form method="GET" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label class="filter-label">From</label>
+                    <input type="date" name="date_from" value="{{ date_from }}" class="filter-input">
+                </div>
+                <div style="flex: 1;">
+                    <label class="filter-label">To</label>
+                    <input type="date" name="date_to" value="{{ date_to }}" class="filter-input">
+                </div>
+            </div>
+            <button type="submit" class="btn-apply">Apply Filters</button>
+        </form>
+    </div>
+</div>
+
+<!-- Bottom Navigation Spacing -->
+<div style="height: 80px;"></div>
+{% endblock %}

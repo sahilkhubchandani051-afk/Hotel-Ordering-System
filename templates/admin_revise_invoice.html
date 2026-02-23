@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Revise Invoice #{{ po.display_id or po.id }}</h1>
+    <a href="/invoice/po/{{ po.id }}" class="btn btn-secondary">Cancel</a>
+</div>
+
+<div class="card">
+    <div
+        style="margin-bottom: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; color: #856404;">
+        <strong>Warning:</strong> Creating a revision will supersede the current invoice. The customer will only see the
+        new revised invoice.
+    </div>
+
+    <form method="POST" action="/admin/orders/revise/{{ po.id }}" id="reviseForm">
+        <label class="form-label">Customer: <strong>{{ po.customer_email }}</strong></label>
+
+        <table class="table" style="margin-top: 20px;">
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Product</th>
+                    <th style="width: 15%;">Unit</th>
+                    <th style="width: 15%;">Rate (₹)</th>
+                    <th style="width: 15%;">Qty</th>
+                    <th style="width: 15%;">Amount</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="itemsBody">
+                {% for item in items %}
+                <tr class="item-row">
+                    <td>
+                        <select name="product_id" class="form-control product-select" required
+                            onchange="updateRow(this)">
+                            {% for p in products %}
+                            <option value="{{ p.id }}" data-rate="{{ p.rate }}" data-unit="{{ p.unit }}" {% if
+                                p.id==item.product_id %}selected{% endif %}>
+                                {{ p.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control item-unit" value="{{ item.unit }}" readonly tabindex="-1"
+                            style="background: #eee;">
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" name="rate" class="form-control item-rate"
+                            value="{{ item.quoted_rate }}" required oninput="calcRow(this)">
+                    </td>
+                    <td>
+                        <input type="number" step="0.1" name="qty" class="form-control item-qty" value="{{ item.qty }}"
+                            required oninput="calcRow(this)">
+                    </td>
+                    <td>
+                        <input type="text" class="form-control item-amount" value="{{ item.amount }}" readonly
+                            tabindex="-1" style="background: #eee;">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">×</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" style="text-align: right; font-weight: bold;">Invoice Total:</td>
+                    <td style="font-weight: bold;" id="grandTotal">₹{{ po.total_amount }}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div style="margin-top: 20px;">
+            <label class="form-label">Note / Reason for Revision (Optional):</label>
+            <textarea name="revision_reason" class="form-control" rows="2"
+                placeholder="e.g. Quantity correction, Price update..."></textarea>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="addRow()">+ Add Item</button>
+            <button type="submit" class="btn btn-primary">Generate Revised Invoice</button>
+        </div>
+    </form>
+</div>
+
+
+<script id="revise-product-data" type="application/json">
+    {
+        {% for p in products %}
+        "{{ p.id }}": { "rate": {{ p.rate }}, "unit": "{{ p.unit }}" }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    }
+</script>
+
+<script>
+    let products = {};
+    try {
+        products = JSON.parse(document.getElementById('revise-product-data').textContent);
+    } catch (e) {
+        console.error("Failed to parse product data", e);
+    }
+
+    function updateRow(select) {
+        const row = select.closest('tr');
+        const pid = select.value;
+        if (products[pid]) {
+            row.querySelector('.item-rate').value = products[pid].rate;
+            row.querySelector('.item-unit').value = products[pid].unit;
+            calcRow(select);
+        }
+    }
+
+    function calcRow(input) {
+        const row = input.closest('tr');
+        const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+        const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+        const amount = qty * rate;
+        row.querySelector('.item-amount').value = amount.toFixed(2);
+        calcTotal();
+    }
+
+    function calcTotal() {
+        let total = 0;
+        document.querySelectorAll('.item-amount').forEach(inp => {
+            total += parseFloat(inp.value) || 0;
+        });
+        const totalElem = document.getElementById('grandTotal');
+        if (totalElem) {
+            totalElem.textContent = '₹' + total.toFixed(2);
+        }
+    }
+
+    function removeRow(btn) {
+        const row = btn.closest('tr');
+        if (document.querySelectorAll('.item-row').length > 1) {
+            row.remove();
+            calcTotal();
+        } else {
+            alert("At least one item is required.");
+        }
+    }
+
+    function addRow() {
+        const tbody = document.getElementById('itemsBody');
+        const firstRow = tbody.querySelector('.item-row');
+        if (!firstRow) return;
+
+        const newRow = firstRow.cloneNode(true);
+
+        // Reset inputs
+        newRow.querySelector('.item-qty').value = '';
+        newRow.querySelector('.item-amount').value = '';
+
+        // Reset validation state
+        const select = newRow.querySelector('.product-select');
+        if (select) {
+            select.value = "";
+            select.selectedIndex = 0;
+        }
+        newRow.querySelector('.item-rate').value = "";
+        newRow.querySelector('.item-unit').value = "";
+
+        tbody.appendChild(newRow);
+    }
+</script>
+{% endblock %}

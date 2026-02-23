@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Dashboard-specific Styles */
+    :root {
+        --color-blue-bg: #E3F2FD;
+        --color-blue-text: #1E88E5;
+        --color-yellow-bg: #FFF9C4;
+        --color-yellow-text: #FBC02D;
+        --color-green-bg: #E8F5E9;
+        --color-green-text: #43A047;
+        --color-red-bg: #FFEBEE;
+        --color-red-text: #E53935;
+        --color-purple-bg: #F3E5F5;
+        --color-purple-text: #8E24AA;
+    }
+
+    .admin-dashboard {
+        padding: 1rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Welcome Section */
+    .welcome-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .welcome-title {
+        font-size: 28px;
+        font-weight: 800;
+        color: #1E293B;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .welcome-subtitle {
+        font-size: 15px;
+        color: #64748B;
+        margin-top: 4px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 2rem;
+    }
+
+    .stats-card {
+        border-radius: 16px;
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 100px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s;
+    }
+
+    .stats-card:active {
+        transform: scale(0.98);
+    }
+
+    .stats-card.blue {
+        background-color: var(--color-blue-bg);
+        border-left: 4px solid var(--color-blue-text);
+    }
+
+    .stats-card.yellow {
+        background-color: var(--color-yellow-bg);
+        border-left: 4px solid var(--color-yellow-text);
+    }
+
+    .stats-card.green {
+        background-color: var(--color-green-bg);
+        border-left: 4px solid var(--color-green-text);
+    }
+
+    .stats-card.red {
+        background-color: var(--color-red-bg);
+        border-left: 4px solid var(--color-red-text);
+    }
+
+    .stats-card.purple {
+        background-color: var(--color-purple-bg);
+        border-left: 4px solid var(--color-purple-text);
+    }
+
+    .stats-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+
+    .stats-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: #1E293B;
+        line-height: 1;
+    }
+
+    /* Quick Actions */
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1E293B;
+        margin-bottom: 1rem;
+    }
+
+    .action-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .action-tile {
+        background: #FFFFFF;
+        border-radius: 16px;
+        padding: 1rem 0.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+        transition: all 0.2s;
+        height: 110px;
+        border: 1px solid #F1F5F9;
+    }
+
+    .action-tile:active {
+        transform: scale(0.96);
+        background-color: #F8FAFC;
+    }
+
+    .action-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+        font-size: 20px;
+    }
+
+    .action-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        line-height: 1.2;
+    }
+
+    /* Colors for Actions */
+    .bg-blue-soft {
+        background-color: #E0F2FE;
+        color: #0284C7;
+    }
+
+    .bg-green-soft {
+        background-color: #DCFCE7;
+        color: #16A34A;
+    }
+
+    .bg-purple-soft {
+        background-color: #F3E8FF;
+        color: #9333EA;
+    }
+
+    .bg-orange-soft {
+        background-color: #FFEDD5;
+        color: #EA580C;
+    }
+
+    .bg-indigo-soft {
+        background-color: #E0E7FF;
+        color: #4F46E5;
+    }
+
+    /* Override for wider screens */
+    @media (min-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .action-grid {
+            grid-template-columns: repeat(6, 1fr);
+        }
+    }
+</style>
+
+<div class="admin-dashboard">
+    <!-- Welcome -->
+    <div class="welcome-header">
+        <h1 class="welcome-title">Hello, Admin 👋</h1>
+        <p class="welcome-subtitle">Here's what's happening today.</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <!-- Requests -->
+        <div class="stats-card blue">
+            <span class="stats-label">Requests</span>
+            <span class="stats-value">{{ stats.total_prs }}</span>
+        </div>
+
+        <!-- Pending -->
+        <div class="stats-card yellow">
+            <span class="stats-label">Pending</span>
+            <span class="stats-value">{{ stats.pending }}</span>
+        </div>
+
+        <!-- Accepted -->
+        <div class="stats-card green">
+            <span class="stats-label">Accepted</span>
+            <span class="stats-value">{{ stats.accepted }}</span>
+        </div>
+
+        <!-- Rejected -->
+        <div class="stats-card red">
+            <span class="stats-label">Rejected</span>
+            <span class="stats-value">{{ stats.rejected }}</span>
+        </div>
+
+        <!-- Partial -->
+        <div class="stats-card purple">
+            <span class="stats-label">Partial</span>
+            <span class="stats-value">{{ stats.partially_accepted }}</span>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <h3 class="section-title">Quick Actions</h3>
+    <div class="action-grid">
+        <div class="action-tile" onclick="location.href='/admin/direct_sales'">
+            <div class="action-icon bg-blue-soft">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+            </div>
+            <span class="action-title">Create<br>Sale</span>
+        </div>
+
+        <div class="action-tile" onclick="location.href='/admin/products/form'">
+            <div class="action-icon bg-green-soft">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </div>
+            <span class="action-title">Add<br>Product</span>
+        </div>
+
+        <div class="action-tile" onclick="location.href='/admin/reports'">
+            <div class="action-icon bg-purple-soft">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+            </div>
+            <span class="action-title">Reports</span>
+        </div>
+
+        <div class="action-tile" onclick="location.href='/admin/inventory'">
+            <div class="action-icon bg-orange-soft">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+                    <path
+                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                    </path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+            </div>
+            <span class="action-title">Inventory</span>
+        </div>
+
+        <div class="action-tile" onclick="location.href='/admin/profile'">
+            <div class="action-icon bg-indigo-soft">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            <span class="action-title">My<br>Profile</span>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Gradient Header Simulation to match mock-up */
+    /* Only apply this simulation if we want to change the navbar look for admin only, but for now we keep base.html navbar */
+    /* If the user wanted the EXACT purple header, we would need to override base.html navbar styles or hide it. */
+    /* Assuming base.html navbar is acceptable as the 'header' for now, but if not we can add styles here. */
+</style>
+{% endblock %}

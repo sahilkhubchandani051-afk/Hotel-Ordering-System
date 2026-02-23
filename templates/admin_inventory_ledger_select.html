@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --accent-color: #10b981;
+        /* Emerald for Inventory (IMS) */
+        --accent-bg: #ecfdf5;
+        --card-radius: 20px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .report-page {
+        padding: 1rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1.25rem;
+        padding: 0.25rem 0;
+    }
+
+    .btn-back {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: #f1f5f9;
+        color: #475569;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: var(--transition);
+        border: 1px solid var(--border);
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    /* 2. Search & Filter Bar */
+    .search-filter-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 1.5rem;
+        width: 100%;
+    }
+
+    .search-container {
+        flex: 1;
+        position: relative;
+        display: flex;
+    }
+
+    .search-container i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        font-size: 0.95rem;
+        background: #fff;
+        transition: var(--transition);
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        outline: none;
+    }
+
+    /* Product Grid */
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .p-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        transition: var(--transition);
+    }
+
+    .p-card-link:hover {
+        transform: translateY(-4px);
+    }
+
+    .p-card {
+        background: #fff;
+        border-radius: var(--card-radius);
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .p-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: #e2e8f0;
+        transition: var(--transition);
+    }
+
+    .p-card-link:hover .p-card::before {
+        background: var(--accent-color);
+    }
+
+    .p-category {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--accent-color);
+        letter-spacing: 0.05em;
+    }
+
+    .p-name {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .p-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: auto;
+    }
+
+    .btn-view {
+        width: 100%;
+        padding: 0.6rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        text-align: center;
+        color: #475569;
+        transition: var(--transition);
+        margin-top: 8px;
+    }
+
+    .p-card-link:hover .btn-view {
+        background: var(--accent-bg);
+        color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+
+    @media (max-width: 768px) {
+        .product-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="report-page">
+    <div class="page-header">
+        <a href="/admin/reports" class="btn-back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div class="header-title">
+            <h1>Product Ledger</h1>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-filter-wrapper">
+        <div class="search-container">
+            <i>🔍</i>
+            <input type="text" id="productSearch" onkeyup="filterProducts()"
+                placeholder="Search products by name or category..." class="search-input">
+        </div>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="product-grid" id="productList">
+        {% for product in products %}
+        <a href="/admin/inventory/ledger/{{ product.id }}" class="p-card-link">
+            <div class="p-card">
+                <div class="p-category">{{ product.category or 'General' }}</div>
+                <h3 class="p-name">{{ product.name }}</h3>
+
+                <div class="p-meta">
+                    <span>📦 Unit: <strong>{{ product.unit }}</strong></span>
+                </div>
+
+                <div class="btn-view">View Ledger →</div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- No Results -->
+    <div id="noResults"
+        style="display: none; text-align: center; padding: 4rem 2rem; background: #fff; border-radius: var(--card-radius); border: 2px dashed #e2e8f0; margin-top: 1rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🔎</div>
+        <h3 style="color: #64748b; font-weight: 700;">No products found</h3>
+        <p style="color: #94a3b8; font-size: 0.9rem;">Try a different search term.</p>
+    </div>
+</div>
+
+<script>
+    function filterProducts() {
+        const input = document.getElementById('productSearch');
+        const filter = input.value.toLowerCase();
+        const links = document.querySelectorAll('.p-card-link');
+        const noResults = document.getElementById('noResults');
+        let found = 0;
+
+        links.forEach(link => {
+            const text = link.innerText.toLowerCase();
+            if (text.includes(filter)) {
+                link.style.display = 'block';
+                found++;
+            } else {
+                link.style.display = 'none';
+            }
+        });
+
+        noResults.style.display = found === 0 ? 'block' : 'none';
+    }
+</script>
+{% endblock %}

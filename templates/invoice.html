@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice #{{ po.invoice_no }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            line-height: 1.4;
+            background: #fff;
+        }
+
+        .invoice-box {
+            max-width: 800px;
+            margin: auto;
+            padding: 40px;
+            border: 1px solid #eee;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+            font-size: 14px;
+            background: #fff;
+            position: relative;
+            min-height: 1000px;
+        }
+
+        .header-table {
+            width: 100%;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+
+        .header-table td {
+            vertical-align: top;
+            border: none;
+            padding: 0;
+        }
+
+        .company-info h2 {
+            margin: 0 0 10px 0;
+            color: #000;
+            font-size: 28px;
+            text-transform: uppercase;
+        }
+
+        .company-info .official-title {
+            font-size: 18px;
+            color: #555;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .invoice-details {
+            text-align: right;
+        }
+
+        .invoice-details strong {
+            display: inline-block;
+            width: 120px;
+            color: #555;
+        }
+
+        .section-header {
+            background: #f4f4f4;
+            padding: 8px 12px;
+            font-weight: bold;
+            border-left: 4px solid #333;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .bill-to-section {
+            margin-bottom: 30px;
+        }
+
+        .bill-to-content {
+            padding-left: 10px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .items-table th {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .items-table td {
+            border: 1px solid #ddd;
+            padding: 10px 8px;
+            font-size: 13px;
+        }
+
+        .totals-table {
+            width: 40%;
+            margin-left: auto;
+            border-collapse: collapse;
+        }
+
+        .totals-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .totals-table tr:last-child td {
+            border-bottom: 2px solid #333;
+            font-weight: bold;
+            font-size: 15px;
+            padding-top: 15px;
+        }
+
+        .amount-words {
+            margin-top: 40px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .page-footer {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 10px;
+            color: #aaa;
+        }
+
+        .no-print {
+            max-width: 800px;
+            margin: 0 auto 20px auto;
+            text-align: right;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            body {
+                padding: 0;
+                background: #fff;
+            }
+
+            .invoice-box {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                min-height: auto;
+            }
+
+            .page-footer {
+                position: fixed;
+                bottom: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="no-print" style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end;">
+        <a href="/admin/reports/pos"
+            style="text-decoration: none; background: #f1f5f9; color: #333; padding: 10px 20px; border-radius: 4px; border: 1px solid #ddd; font-size: 14px;">Back
+            to Orders</a>
+        <button onclick="window.print()"
+            style="background: #333; color: #fff; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download / Print
+        </button>
+    </div>
+
+    <div class="invoice-box">
+        <!-- HEADER -->
+        <table class="header-table">
+            <tr>
+                <td class="company-info">
+                    <h2>{{ supplier_name }}</h2>
+                    <div class="official-title">Official Invoice</div>
+                </td>
+                <td class="invoice-details">
+                    <div><strong>Invoice No:</strong> {{ po.invoice_no }}</div>
+                    <div style="margin-top: 5px;"><strong>Date:</strong> {{ po.created_at[:10] }}</div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- BILL TO SECTION -->
+        <div class="bill-to-section">
+            <div class="section-header">BILL TO / ग्राहकाचे नाव</div>
+            <div class="bill-to-content">
+                <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">{{ customer.name }}</div>
+                {% if customer.business_name %}<div style="margin-bottom: 3px;">{{ customer.business_name }}</div>{%
+                endif %}
+                {% if customer.email %}<div>{{ customer.email }}</div>{% endif %}
+                {% if customer.mobile %}<div>{{ customer.mobile }}</div>{% endif %}
+                {% if customer.address %}<div style="max-width: 50%; margin-top: 5px;">{{ customer.address }}</div>{%
+                endif %}
+            </div>
+        </div>
+
+        <!-- ITEMS TABLE (Desktop) -->
+        <table class="items-table desktop-view">
+            <thead>
+                <tr>
+                    <th style="text-align: left; width: 40%;">Item / वस्तू</th>
+                    <th style="width: 15%;">Unit / एकक</th>
+                    <th style="width: 10%;">Qty / नग</th>
+                    <th style="text-align: right; width: 15%;">Rate / दर</th>
+                    <th style="text-align: right; width: 20%;">Amount / रक्कम</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <strong>{{ item.name }}</strong>
+                        {% if item.name_marathi %}<br><span style="font-size: 12px; color: #666;">{{ item.name_marathi
+                            }}</span>{% endif %}
+                    </td>
+                    <td style="text-align: center;">{{ item.unit }}</td>
+                    <td style="text-align: center;">{{ item.get('delivered_qty') or item.get('qty', 0) }}</td>
+                    <td style="text-align: right;">₹{{ "%.2f"|format(item.get('quoted_rate', item.get('rate', 0)) |
+                        float) }}</td>
+                    <td style="text-align: right;">₹{{ "%.2f"|format(item.get('amount') | float) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- ITEMS LIST (Mobile) -->
+        <div class="mobile-view" style="display: none; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+            {% for item in items %}
+            <div style="border: 1px solid #eee; padding: 1rem; border-radius: 8px; background: #f9f9f9;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <div style="font-weight: bold;">{{ item.name }}</div>
+                    <div style="font-weight: bold;">₹{{ "%.2f"|format(item.get('amount') | float) }}</div>
+                </div>
+                {% if item.name_marathi %}
+                <div style="font-size: 12px; color: #666; margin-bottom: 8px;">{{ item.name_marathi }}</div>
+                {% endif %}
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; font-size: 12px; color: #555;">
+                    <div>Qty: {{ item.get('delivered_qty') or item.get('qty', 0) }} {{ item.unit }}</div>
+                    <div style="text-align: center;">Rate: ₹{{ "%.2f"|format(item.get('quoted_rate', item.get('rate',
+                        0)) | float) }}</div>
+                    <div style="text-align: right;">{{ item.unit }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <style>
+            @media (max-width: 600px) {
+                .invoice-box {
+                    padding: 15px;
+                }
+
+                .items-table.desktop-view {
+                    display: none;
+                }
+
+                .mobile-view {
+                    display: flex !important;
+                }
+
+                .header-table td {
+                    display: block;
+                    text-align: center !important;
+                    margin-bottom: 1rem;
+                }
+
+                .invoice-details {
+                    text-align: center !important;
+                }
+
+                .totals-table {
+                    width: 100%;
+                }
+
+                .company-info h2 {
+                    font-size: 22px;
+                }
+            }
+        </style>
+
+        <!-- TOTALS SECTION -->
+        <table class="totals-table">
+            <tr>
+                <td>Invoice Amount / एकूण रक्कम</td>
+                <td style="text-align: right;">₹{{ "%.2f"|format(total) }}</td>
+            </tr>
+            <tr>
+                <td>Previous Balance / मागील बाकी</td>
+                <td style="text-align: right;">₹{{ "%.2f"|format(previous_balance) }}</td>
+            </tr>
+            <tr>
+                <td>Total Outstanding / एकूण बाकी</td>
+                <td style="text-align: right;">₹{{ "%.2f"|format(outstanding_balance) }}</td>
+            </tr>
+        </table>
+
+        <!-- AMOUNT IN WORDS -->
+        <div class="amount-words">
+            Amount in Words / अक्षरी रक्कम: <strong>{{ amount_in_words }}</strong>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <p style="font-size: 14px; font-weight: bold; margin-bottom: 20px;">Thank you for your business!</p>
+            <p>Subject to jurisdiction.</p>
+        </div>
+
+        <div class="page-footer">
+            Invoice: {{ po.invoice_no }} | Page 1/1
+        </div>
+    </div>
+
+</body>
+
+</html>

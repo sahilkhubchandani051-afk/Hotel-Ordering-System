@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 500px;">
+    <div class="card">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Create Business Account</h2>
+
+        {% if error %}
+        <div id="registerError"
+            style="background: #fee2e2; color: #b91c1c; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; text-align: center;">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <div id="existingAccountMessage" style="display: none; background: #fff7ed; color: #9a3412; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+            <div style="text-align: center; margin-bottom: 0.75rem;">
+                An account with this email already exists. Please log in or reset your password.
+            </div>
+            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+                <a href="/login" class="btn btn-primary">Go to Login</a>
+                <a href="/reset-password" style="align-self: center;">Forgot password?</a>
+            </div>
+        </div>
+
+        <form id="registerForm" action="/register" method="post">
+            <div style="margin-bottom: 1rem;">
+                <label>Full Name</label>
+                <input type="text" name="full_name" class="form-control" required placeholder="John Doe"
+                    value="{{ form.full_name if form else '' }}">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label>Business Name</label>
+                <input type="text" name="business_name" class="form-control" required placeholder="Grand Hotel & Spa"
+                    value="{{ form.business_name if form else '' }}">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label>Mobile Number</label>
+                    <input type="tel" name="mobile" class="form-control" required placeholder="9876543210"
+                        pattern="[0-9]{7,15}" title="7 to 15 digits" value="{{ form.mobile if form else '' }}">
+                </div>
+                <div>
+                    <label>Email Address</label>
+                    <input type="email" name="email" id="emailInput" class="form-control" required
+                        placeholder="john@example.com" value="{{ form.email if form else '' }}">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label>Billing Address</label>
+                <textarea name="address" class="form-control" required rows="2"
+                    placeholder="123 Main Street, City">{{ form.address if form else '' }}</textarea>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label>Password</label>
+                <input type="password" name="password" class="form-control" required placeholder="••••••••"
+                    pattern="(?=.*\d)(?=.*[!@#$%^&*]).{8,}"
+                    title="Must contain at least one number and one special character (!@#$%^&*), and be at least 8 or more characters">
+                <small style="color: #666; font-size: 0.8rem; display: block; margin-top: 4px;">
+                    Min 8 chars, 1 number, 1 special character (!@#$%^&*)
+                </small>
+            </div>
+
+            <button type="submit" class="btn btn-success" style="width: 100%;">Register Business</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem;">
+            Already have an account? <a href="/">Login here</a>
+        </p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('registerForm');
+        const emailInput = document.getElementById('emailInput');
+        const existingAccountMessage = document.getElementById('existingAccountMessage');
+        const registerError = document.getElementById('registerError');
+
+        const showExistingAccountUI = () => {
+            if (!form) return;
+            form.dataset.blocked = 'true';
+            const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+            if (existingAccountMessage) existingAccountMessage.style.display = 'block';
+        };
+
+        const isExistingUserError = (msg) => {
+            if (!msg) return false;
+            return /already\s+(exists|registered)/i.test(msg) || /user\s+already\s+registered/i.test(msg);
+        };
+
+        if (registerError && isExistingUserError(registerError.textContent || '')) {
+            showExistingAccountUI();
+        }
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                if (form.dataset.blocked === 'true') {
+                    e.preventDefault();
+                    return;
+                }
+                if (form.dataset.confirmed === 'true') return;
+
+                e.preventDefault();
+                const email = emailInput.value;
+
+                try {
+                    const resp = await fetch(`/api/check-customer-duplicate?email=${encodeURIComponent(email)}`);
+                    const data = await resp.json();
+
+                    if (data.exists) {
+                        showExistingAccountUI();
+                        return;
+                    }
+
+                    form.dataset.confirmed = 'true';
+                    form.submit();
+                } catch (err) {
+                    console.error(err);
+                    form.submit();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

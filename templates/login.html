@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style>
+    body {
+        background-color: #F0F4F8;
+    }
+
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+
+    .login-card {
+        background: #FFFFFF;
+        border-radius: 20px;
+        padding: 3rem 2.5rem;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    .logo-container {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .logo {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        font-weight: 800;
+        color: #FFFFFF;
+        box-shadow: 0 8px 16px rgba(0, 122, 255, 0.2);
+    }
+
+    .welcome-title {
+        font-size: 28px;
+        font-weight: 800;
+        color: #1E293B;
+        margin: 0 0 0.5rem 0;
+        text-align: center;
+    }
+
+    .welcome-subtitle {
+        font-size: 16px;
+        color: #64748B;
+        margin: 0 0 2rem 0;
+        text-align: center;
+    }
+
+    .error-message {
+        background: #FEE2E2;
+        color: #DC2626;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-size: 14px;
+        border: 1px solid #FCA5A5;
+    }
+
+    .auth-input-wrapper {
+        margin-bottom: 1.25rem;
+        position: relative;
+        overflow: hidden;
+        background: #FFFFFF;
+        border-radius: 12px;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94A3B8;
+        pointer-events: none;
+    }
+
+    .input-field {
+        width: 100%;
+        height: 52px;
+        padding: 0 48px 0 48px;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        font-size: 15px;
+        color: #1E293B;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+
+    /* Hide native password toggle for Edge/IE and WebKit (Chrome/Safari) */
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear,
+    input[type="password"]::-webkit-password-reveal-button {
+        display: none !important;
+        -webkit-appearance: none;
+    }
+
+    .input-field.password-input {
+        padding-right: 75px;
+    }
+
+    .input-field:focus {
+        outline: none;
+        border-color: #007AFF;
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    .input-field::placeholder {
+        color: #94A3B8;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94A3B8;
+        cursor: pointer;
+        transition: color 0.2s;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        max-width: 20px;
+        max-height: 20px;
+        flex-shrink: 0;
+        pointer-events: auto;
+    }
+
+    .toggle-password:hover {
+        color: #64748B;
+    }
+
+    .toggle-password svg {
+        width: 20px !important;
+        height: 20px !important;
+        max-width: 20px !important;
+        max-height: 20px !important;
+    }
+
+    .forgot-password {
+        text-align: right;
+        margin-bottom: 1.5rem;
+    }
+
+    .forgot-password a {
+        color: #64748B;
+        font-size: 14px;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .forgot-password a:hover {
+        color: #1E293B;
+    }
+
+    .login-button {
+        width: 100%;
+        height: 52px;
+        background: #007AFF;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 12px;
+        font-size: 17px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+    }
+
+    .login-button:hover {
+        background: #0051D5;
+        box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
+        transform: translateY(-1px);
+    }
+
+    .login-button:active {
+        transform: translateY(0);
+    }
+
+    .signup-text {
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: 15px;
+        color: #64748B;
+    }
+
+    .signup-text a {
+        color: #1E293B;
+        font-weight: 700;
+        text-decoration: none;
+        margin-left: 0.25rem;
+    }
+
+    .signup-text a:hover {
+        color: #007AFF;
+    }
+
+    .copyright {
+        text-align: center;
+        margin-top: 2rem;
+        font-size: 13px;
+        color: #94A3B8;
+    }
+
+    .bottom-nav {
+        display: none;
+    }
+
+    @media (max-width: 480px) {
+        .login-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .welcome-title {
+            font-size: 24px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="logo-container">
+            <div class="logo">A</div>
+            <h1 class="welcome-title">Welcome Back!</h1>
+            <p class="welcome-subtitle">Sign in to continue.</p>
+        </div>
+
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+
+        <form action="/login" method="post">
+            <div class="auth-input-wrapper">
+                <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <input type="email" name="email" class="input-field" placeholder="Username" required>
+            </div>
+
+            <div class="auth-input-wrapper">
+                <span
+                    style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 18px; pointer-events: none; opacity: 0.5;">🔒</span>
+                <input type="password" name="password" id="login-pwd-field" class="input-field password-input"
+                    placeholder="••••••••" required>
+                <div id="customPwdToggle"
+                    style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 13px; font-weight: 600; color: #007AFF; cursor: pointer; user-select: none; z-index: 50; background: #fff; padding-left: 5px;">
+                    Show</div>
+            </div>
+
+            <div class="forgot-password">
+                <a href="/forgot-password-otp">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="login-button">Log In</button>
+        </form>
+
+        <div class="signup-text">
+            Don't have an account? <a href="/register">Sign Up</a>
+        </div>
+
+        <div class="copyright">
+            Copyright © 2025. All rights reserved.
+        </div>
+    </div>
+</div>
+
+<script>
+    // Password toggle functionality
+    const toggleBtn = document.getElementById('customPwdToggle');
+    const pwdInput = document.getElementById('login-pwd-field');
+
+    toggleBtn.addEventListener('click', function () {
+        // Toggle the type attribute
+        const type = pwdInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        pwdInput.setAttribute('type', type);
+
+        // Toggle the text
+        if (type === 'password') {
+            this.textContent = 'Show';
+        } else {
+            this.textContent = 'Hide';
+        }
+    });
+</script>
+{% endblock %}

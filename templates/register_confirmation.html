@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 4rem auto; text-align: center;">
+    <div class="card" style="padding: 3rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">✉️</div>
+        <h2 style="margin-bottom: 1rem; color: var(--primary);">Verify Your Email</h2>
+        <p style="color: #64748b; font-size: 1.1rem; line-height: 1.6;">
+            We have sent a confirmation link to <strong>{{ email }}</strong>.
+        </p>
+        <p style="color: #64748b; margin-bottom: 2rem;">
+            Please click the link in your email to verify your account and continue.
+        </p>
+
+        <div
+            style="background: #f1f5f9; padding: 1rem; border-radius: 8px; font-size: 0.9rem; color: #475569; margin-bottom: 2rem;">
+            Once verified, you can <a href="/login" style="color: var(--primary); font-weight: 600;">Login here</a>.
+        </div>
+
+        <a href="/" class="btn btn-secondary">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

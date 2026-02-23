@@ -1,0 +1,924 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Global Page Styling */
+    body {
+        background-color: #F8FAFC !important;
+    }
+
+    .main-container {
+        padding: 0 !important;
+        max-width: 600px !important;
+        margin: 0 auto !important;
+    }
+
+    /* Slim Header */
+    .catalog-header {
+        padding: 16px 16px 8px 16px;
+        background: #FFFFFF;
+    }
+
+    /* Modern Search Bar */
+    .search-wrapper {
+        position: relative;
+        margin-bottom: 12px;
+    }
+
+    .search-wrapper input {
+        width: 100%;
+        height: 44px;
+        background: #F1F5F9;
+        border: 1px solid #E2E8F0;
+        border-radius: 22px;
+        padding: 0 16px 0 44px;
+        font-size: 15px;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .search-wrapper input:focus {
+        background: #FFFFFF;
+        border-color: #4C51BF;
+        box-shadow: 0 0 0 3px rgba(76, 81, 191, 0.1);
+    }
+
+    .search-wrapper .search-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94A3B8;
+        font-size: 18px;
+    }
+
+    /* Horizontal Category Pills */
+    .category-scroll-container {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 4px 16px 12px 16px;
+        background: #FFFFFF;
+        border-bottom: 1px solid #EDF2F7;
+        scrollbar-width: none;
+    }
+
+    .category-scroll-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .category-pill {
+        display: inline-block;
+        padding: 6px 18px;
+        margin-right: 8px;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #4A5568;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .category-pill.active {
+        background: #4C51BF;
+        border-color: #4C51BF;
+        color: #FFFFFF;
+    }
+
+    /* Quick Add Trigger */
+    .quick-add-trigger-bar {
+        padding: 8px 16px;
+        background: #EDF2F7;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .btn-quick-add-toggle {
+        background: #3182CE;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+    }
+
+    /* Quick Add Panel */
+    .quick-add-panel {
+        display: none;
+        padding: 16px;
+        background: #FFFFFF;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    /* Product Feed */
+    .product-list {
+        background: #FFFFFF;
+    }
+
+    .product-row {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid #F1F5F9;
+        background: #FFFFFF;
+        min-height: 72px;
+    }
+
+    .product-row.hidden {
+        display: none;
+    }
+
+    .product-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        background: #F8FAFC;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        flex-shrink: 0;
+        font-size: 24px;
+        overflow: hidden;
+    }
+
+    .product-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .product-name-main {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1A202C;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .product-meta {
+        font-size: 12px;
+        color: #718096;
+        font-weight: 500;
+    }
+
+    /* Stepper UI */
+    .stepper-container {
+        display: flex;
+        align-items: center;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-left: 12px;
+    }
+
+    .stepper-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        color: white;
+        font-size: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .stepper-btn:active {
+        opacity: 0.7;
+    }
+
+    .stepper-minus {
+        background: #E53E3E;
+    }
+
+    .stepper-plus {
+        background: #48BB78;
+    }
+
+    .stepper-input-wrapper {
+        width: 44px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .qty-display {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 700;
+        color: #2D3748;
+        outline: none;
+        appearance: none;
+        -moz-appearance: textfield;
+    }
+
+    .qty-display::-webkit-outer-spin-button,
+    .qty-display::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Floating Cart Badge */
+    .floating-cart-badge {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 32px);
+        max-width: 500px;
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        padding: 10px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+        border: 1px solid #EDF2F7;
+        visibility: hidden;
+        opacity: 0;
+        transition: all 0.3s;
+    }
+
+    .floating-cart-badge.visible {
+        visibility: visible;
+        opacity: 1;
+        bottom: 90px;
+    }
+
+    .cart-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        color: #2D3748;
+    }
+
+    .btn-view-draft {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        color: #4A5568;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    /* Review Table */
+    .review-table th {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: #718096;
+        padding: 8px;
+        border-bottom: 2px solid #F1F5F9;
+    }
+
+    .review-table td {
+        padding: 8px;
+        border-bottom: 1px solid #F1F5F9;
+        font-size: 13px;
+    }
+
+    .status-badge {
+        padding: 2px 8px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .status-matched {
+        background: #F0FDF4;
+        color: #16A34A;
+    }
+
+    .status-error {
+        background: #FEF2F2;
+        color: #DC2626;
+    }
+</style>
+
+<div class="catalog-header">
+    <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="productSearch" placeholder="Search products...">
+    </div>
+</div>
+
+<div class="category-scroll-container">
+    <div class="category-pill active" data-cat-id="">All</div>
+    <div class="category-pill" data-cat-id="uncategorized">Uncategorized</div>
+    {% for c in categories %}
+    <div class="category-pill" data-cat-id="{{ c.id }}">{{ c.name }}</div>
+    {% endfor %}
+</div>
+
+<div class="quick-add-trigger-bar">
+    <button class="btn-quick-add-toggle" id="toggleQuickAdd">
+        <span>⚡ Quick Add / Voice</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14" />
+        </svg>
+    </button>
+</div>
+
+<div class="quick-add-panel" id="quickAddPanel">
+    <textarea id="quickAddInput" class="form-control" rows="3"
+        placeholder="Qty Item (e.g. 10 kg Potato, 2 liter Milk)"></textarea>
+    <small style="color: #718096; margin-top: 4px; display: block; font-size: 12px;">
+        💡 Speak in English or Marathi — AI-assisted parsing, please review before adding
+    </small>
+    <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button type="button" id="parseItems" class="btn btn-primary btn-sm">Parse Items</button>
+        <button type="button" id="speakItems" class="btn btn-secondary btn-sm">🎤 Speak</button>
+        <button type="button" id="clearQuickAdd" class="btn btn-outline-danger btn-sm"
+            style="margin-left: auto;">Clear</button>
+    </div>
+
+    <!-- Quick Review Render Area -->
+    <div id="quickReviewSection" style="display: none; margin-top: 15px;">
+        <table class="review-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Input</th>
+                    <th>Match</th>
+                    <th>Qty</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="quickReviewBody"></tbody>
+        </table>
+        <div style="text-align: right; margin-top: 12px;">
+            <button type="button" id="confirmQuickAdd" class="btn btn-success btn-sm">Add to Draft</button>
+        </div>
+    </div>
+</div>
+
+<div class="product-list" id="productList">
+    <form action="/customer/create_pr" method="post" id="prForm">
+        {% for p in products %}
+        <div class="product-row" data-cat-id="{{ p.category_id or 'uncategorized' }}">
+            <div class="product-icon">
+                {% if p.image_url %}
+                <img src="{{ p.image_url }}" onerror="this.onerror=null;this.src='/static/uploads/placeholder.png';">
+                {% else %}
+                📦
+                {% endif %}
+            </div>
+            <div class="product-info">
+                <span class="product-name-main">{{ p.name }} {% if p.name_marathi %}({{ p.name_marathi }}){% endif
+                    %}</span>
+                <span class="product-meta">{{ p.unit|upper }}</span>
+            </div>
+            <div class="stepper-container">
+                <button type="button" class="stepper-btn stepper-minus" data-id="{{ p.id }}">-</button>
+                <div class="stepper-input-wrapper">
+                    {% set pr_qty = draft_items.get(p.id, 0) %}
+                    <input type="number" name="qty_{{ p.id }}" id="qty-{{ p.id }}" class="qty-display" step="0.1"
+                        min="0" value="{{ pr_qty }}">
+                </div>
+                <button type="button" class="stepper-btn stepper-plus" data-id="{{ p.id }}">+</button>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div id="noResultsRow" style="display: none; padding: 40px; text-align: center; color: #718096;">
+            <div style="font-size: 40px; margin-bottom: 10px;">🔍</div>
+            <p>No products found in this category.</p>
+        </div>
+    </form>
+</div>
+
+<!-- Floating Action Bar -->
+<div class="floating-cart-badge" id="cartBadge">
+    <div class="cart-info">
+        <span id="selectedCount">0</span> Items in Cart
+    </div>
+    <button type="button" id="submitPRBtn" class="btn-view-draft" onclick="submitDraft()">Review & Create PR</button>
+</div>
+
+<!-- Hidden data for Quick Add -->
+<div id="allProductsData" style="display:none;">
+    [
+    {% for p in products %}
+    { "id": {{ p.id }}, "name": {{ p.name | tojson }}, "name_marathi": {{ (p.name_marathi or "") | tojson }}, "unit": {{
+    p.unit | tojson }} }{% if not loop.last %},{% endif %}
+    {% endfor %}
+    ]
+</div>
+
+<script>
+    function submitDraft() {
+        const btn = document.getElementById('submitPRBtn');
+        if (btn) {
+            btn.innerHTML = '⏳ Processing...';
+            btn.disabled = true;
+        }
+        document.getElementById('prForm').submit();
+    }
+
+    let allProducts = [];
+    try {
+        const dataText = document.getElementById('allProductsData').textContent;
+        allProducts = JSON.parse(dataText);
+    } catch (e) {
+        console.error("Error parsing product data:", e);
+    }
+
+    function updateCartBadge() {
+        const inputs = document.querySelectorAll('.qty-display');
+        let count = 0;
+        inputs.forEach(input => {
+            if (parseFloat(input.value) > 0) count++;
+        });
+
+        const badge = document.getElementById('cartBadge');
+        const countSpan = document.getElementById('selectedCount');
+
+        if (countSpan) countSpan.innerText = count;
+        if (badge) {
+            if (count > 0) {
+                badge.classList.add('visible');
+            } else {
+                badge.classList.remove('visible');
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('productSearch');
+        const categoryPills = document.querySelectorAll('.category-pill');
+        const quickAddPanel = document.getElementById('quickAddPanel');
+        const toggleBtn = document.getElementById('toggleQuickAdd');
+        const rows = document.querySelectorAll('.product-row');
+
+        // Quick Add Elements
+        const parseBtn = document.getElementById('parseItems');
+        const quickAddInput = document.getElementById('quickAddInput');
+        const reviewSection = document.getElementById('quickReviewSection');
+        const reviewBody = document.getElementById('quickReviewBody');
+        const confirmQuickAddBtn = document.getElementById('confirmQuickAdd');
+        const clearQuickAddBtn = document.getElementById('clearQuickAdd');
+        const speakBtn = document.getElementById('speakItems');
+
+        let itemsInReview = [];
+
+        // Initial badge update
+        updateCartBadge();
+
+        let activeCatId = "";
+
+        // Category Filter
+        categoryPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                categoryPills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                activeCatId = pill.dataset.catId;
+                filterList();
+            });
+        });
+
+        // Search Filter
+        if (searchInput) {
+            searchInput.addEventListener('input', filterList);
+        }
+
+        function filterList() {
+            const query = (searchInput.value || "").toLowerCase().trim();
+            let hasVisible = false;
+
+            rows.forEach(row => {
+                const nameNode = row.querySelector('.product-name-main');
+                if (!nameNode) return;
+                const name = nameNode.textContent.toLowerCase();
+                const rowCatId = row.dataset.catId;
+
+                const matchesSearch = name.includes(query);
+                const matchesCat = (activeCatId === "") || (rowCatId === activeCatId);
+
+                if (matchesSearch && matchesCat) {
+                    row.classList.remove('hidden');
+                    hasVisible = true;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+
+            const noResults = document.getElementById('noResultsRow');
+            if (noResults) noResults.style.display = hasVisible ? 'none' : 'block';
+        }
+
+        // Stepper Logic
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.stepper-btn');
+            if (btn) {
+                const id = btn.dataset.id;
+                const delta = btn.classList.contains('stepper-plus') ? 1 : -1;
+                const input = document.getElementById('qty-' + id);
+                if (input) {
+                    let next = (parseFloat(input.value) || 0) + delta;
+                    input.value = Math.max(0, Math.round(next * 10) / 10);
+                    updateCartBadge();
+                }
+            }
+        });
+
+        // Manual Input sync
+        document.addEventListener('input', (e) => {
+            if (e.target.classList.contains('qty-display')) {
+                updateCartBadge();
+            }
+        });
+
+        // Quick Add Toggle
+        if (toggleBtn && quickAddPanel) {
+            toggleBtn.addEventListener('click', () => {
+                const isVisible = quickAddPanel.style.display === 'block';
+                quickAddPanel.style.display = isVisible ? 'none' : 'block';
+                toggleBtn.innerHTML = isVisible ? '<span>⚡ Quick Add / Voice</span>' : '<span>❌ Close Quick Add</span>';
+            });
+        }
+
+        // Parse Button with Grok AI
+        if (parseBtn) {
+            parseBtn.addEventListener('click', async function () {
+                try {
+                    const text = (quickAddInput.value || "").trim();
+                    if (!text) return;
+
+                    const originalBtnText = parseBtn.innerHTML;
+                    parseBtn.innerHTML = '<span>⏳ Parsing with AI...</span>';
+                    parseBtn.disabled = true;
+
+                    // Number normalization
+                    function normalizeNumbers(text) {
+                        let normalized = text;
+                        const units = 'kg|kgs|kilogram|kilograms|liter|liters|litre|litres|packet|packets|box|boxes|dozen|pcs|pieces';
+
+                        // Context-aware replacements
+                        normalized = normalized.replace(new RegExp('\\b(to|too)\\s+(' + units + ')\\b', 'gi'), '2 $2');
+                        normalized = normalized.replace(new RegExp('\\bfor\\s+(' + units + ')\\b', 'gi'), '4 $1');
+
+                        // Safe number words
+                        const safeMap = {
+                            'won': '1', 'one': '1', 'two': '2',
+                            'free': '3', 'three': '3', 'four': '4',
+                            'five': '5', 'six': '6', 'seven': '7',
+                            'eight': '8', 'ate': '8', 'nine': '9', 'ten': '10',
+                            'एक': '1', 'दोन': '2', 'तीन': '3', 'चार': '4',
+                            'पाच': '5', 'सहा': '6', 'सात': '7', 'आठ': '8',
+                            'नऊ': '9', 'दहा': '10'
+                        };
+
+                        for (const [word, digit] of Object.entries(safeMap)) {
+                            const regex = new RegExp('\\b' + word + '\\b', 'gi');
+                            normalized = normalized.replace(regex, digit);
+                        }
+                        return normalized;
+                    }
+
+                    const normalizedText = normalizeNumbers(text);
+
+                    // Try Grok AI
+                    let grokSuggestions = [];
+                    try {
+                        console.log("Calling Grok API with:", normalizedText);
+                        const grokResponse = await fetch('/api/parse_with_grok', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text: normalizedText }),
+                            signal: AbortSignal.timeout(6000)
+                        });
+                        if (grokResponse.ok) {
+                            const grokData = await grokResponse.json();
+                            grokSuggestions = grokData.suggestions || [];
+                            console.log("Grok returned:", grokSuggestions);
+                        } else {
+                            console.warn("Grok API error:", grokResponse.status);
+                        }
+                    } catch (e) {
+                        console.log('Grok AI unavailable or timed out:', e);
+                    }
+
+                    // Fallback to rule-based parser if AI returns nothing
+                    if (grokSuggestions.length === 0) {
+                        console.log('Using rule-based fallback parser');
+
+                        function simpleSplit(txt) {
+                            // Split by common separators but keep numbers with units if possible
+                            return txt.split(/[,;\n]+|(?=\d)/).map(s => s.trim()).filter(s => s.length > 0);
+                        }
+
+                        const segments = simpleSplit(normalizedText);
+                        for (const seg of segments) {
+                            const match = seg.match(/^(\d+(?:\.\d+)?)\s*(kg|kgs|liter|liters|litre|litres|packet|packets|box|boxes|dozen|pcs|pieces)?\s+(.+)$/i);
+                            if (match) {
+                                grokSuggestions.push({
+                                    product_name: match[3].trim(),
+                                    qty: parseFloat(match[1]),
+                                    unit: match[2] || 'pcs'
+                                });
+                            } else {
+                                // Try without unit
+                                const matchNoUnit = seg.match(/^(\d+(?:\.\d+)?)\s+(.+)$/i);
+                                if (matchNoUnit) {
+                                    grokSuggestions.push({
+                                        product_name: matchNoUnit[2].trim(),
+                                        qty: parseFloat(matchNoUnit[1]),
+                                        unit: 'pcs'
+                                    });
+                                } else if (seg.length > 2) {
+                                    // Just a name
+                                    grokSuggestions.push({
+                                        product_name: seg,
+                                        qty: 1,
+                                        unit: 'pcs'
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    // Process suggestions
+                    itemsInReview = [];
+                    if (grokSuggestions.length > 0) {
+                        for (const suggestion of grokSuggestions) {
+                            const nameHint = suggestion.product_name;
+                            const qty = suggestion.qty || 1;
+                            const unitHint = normalizeUnit(suggestion.unit || 'pcs');
+
+                            const matchedItem = resolveProduct(nameHint, unitHint, qty);
+                            itemsInReview.push(matchedItem);
+                        }
+                    }
+
+                    if (itemsInReview.length === 0) {
+                        alert("No items could be parsed. Try: '10 kg Potato, 5 liter Milk'");
+                    } else {
+                        renderReviewTable(itemsInReview);
+                    }
+
+                    parseBtn.innerHTML = originalBtnText;
+                    parseBtn.disabled = false;
+                } catch (e) {
+                    console.error("Parsing Error:", e);
+                    alert("Could not parse items.");
+                    parseBtn.innerHTML = "Parse Items";
+                    parseBtn.disabled = false;
+                }
+            });
+        }
+
+        function normalizeUnit(u) {
+            if (!u) return "";
+            u = u.toLowerCase().trim();
+            if (u.match(/^(kgs?|kilograms?|kilogram)$/)) return "kg";
+            if (u.match(/^(litres?|liters?|ltrs?|l|liter|litre)$/)) return "liter";
+            if (u.match(/^(dozens?|doz)$/)) return "dozen";
+            if (u.match(/^(packets?|pkts?|packet|pkt)$/)) return "packet";
+            if (u.match(/^(pieces?|pcs?|nos?|numbers?|units?)$/)) return "pcs";
+            if (u.match(/^(boxes?|box)$/)) return "box";
+            return u;
+        }
+
+        function normalize(text) {
+            if (!text) return '';
+            // Preserving Unicode characters (letters and numbers) while removing specific symbols
+            // This ensures Marathi/Hindi characters aren't stripped.
+            return text.toLowerCase()
+                .replace(/[^\p{L}\p{N}\s]/gu, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function resolveProduct(productName, unitHint, qty) {
+            const search = productName.trim();
+            const lowerSearch = search.toLowerCase();
+            const normalizedSearch = normalize(search);
+
+            // Common Aliases (Transliterations)
+            const aliases = {
+                'badam': 'almonds', 'बदाम': 'almonds',
+                'kaju': 'cashew', 'काजू': 'cashew',
+                'pista': 'pista', 'पिस्ता': 'pista',
+                'masala': 'masala', 'मसाला': 'masala'
+            };
+
+            const aliasMatch = aliases[lowerSearch] || aliases[search];
+
+            let matches = [];
+
+            if (normalizedSearch.length > 0) {
+                // 1. Exact Name Match (Case-Sensitive)
+                matches = allProducts.filter(p => p.name === search || (p.name_marathi && p.name_marathi === search));
+
+                // 2. Case-Insensitive English Name Match
+                if (matches.length === 0) {
+                    matches = allProducts.filter(p => p.name.toLowerCase() === lowerSearch);
+                }
+
+                // 3. Alias / Marathi / Transliteration Match
+                if (matches.length === 0) {
+                    matches = allProducts.filter(p => {
+                        const n = normalize(p.name);
+                        const m = normalize(p.name_marathi || "");
+
+                        // Check if search matches name or marathi name includes/contained in search
+                        if (n.includes(normalizedSearch) || normalizedSearch.includes(n) || m.includes(normalizedSearch) || normalizedSearch.includes(m)) return true;
+
+                        // Check alias dictionary
+                        if (aliasMatch && (n.includes(aliasMatch) || aliasMatch.includes(n))) return true;
+
+                        return false;
+                    });
+                }
+
+                // 4. Bracket Extraction Match (e.g. "Almonds (बदाम)")
+                if (matches.length === 0) {
+                    matches = allProducts.filter(p => {
+                        const bracketMatch = p.name.match(/\((.*?)\)/);
+                        if (bracketMatch) {
+                            const inBrackets = normalize(bracketMatch[1]);
+                            return inBrackets === normalizedSearch;
+                        }
+                        return false;
+                    });
+                }
+            }
+
+            // Refinement logic for multiple matches
+            if (matches.length > 1 && unitHint) {
+                const unitMatch = matches.filter(p => {
+                    const pu = normalizeUnit(p.unit);
+                    return pu === unitHint || (unitHint === 'pcs' && !['kg', 'liter', 'dozen'].includes(pu));
+                });
+                if (unitMatch.length > 0) matches = unitMatch;
+            }
+
+            let displayOriginal = productName;
+            if (qty !== 1 || unitHint) displayOriginal = qty + ' ' + (unitHint || '') + ' ' + productName;
+
+            return {
+                original: displayOriginal.trim(),
+                qty: qty,
+                matches: matches,
+                selectedId: matches.length === 1 ? matches[0].id : null
+            };
+        }
+
+        function renderReviewTable(items) {
+            if (!reviewBody || !reviewSection) return;
+            reviewBody.innerHTML = '';
+            reviewSection.style.display = 'block';
+            items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                item.uniqueId = 'parsed-' + index;
+                tr.id = item.uniqueId;
+
+                let matchCell = '';
+                let statusBadge = '';
+
+                if (item.matches.length === 1) {
+                    const p = item.matches[0];
+                    matchCell = '<span style="font-weight:600;">' + p.name + '</span>';
+                    statusBadge = '<span class="status-badge status-matched">✅ OK</span>';
+                    item.selectedId = p.id;
+                } else if (item.matches.length > 1) {
+                    statusBadge = '<span class="status-badge status-multiple" style="background:#FEF3C7; color:#92400E;">⚠️ Select</span>';
+                    let options = item.matches.map(p => '<option value="' + p.id + '">' + p.name + ' (' + p.unit + ')</option>').join('');
+                    matchCell = '<select class="match-selector" style="font-size:12px; width:100%"><option value="">-- Select --</option>' + options + '</select>';
+                } else {
+                    statusBadge = '<span class="status-badge status-error">❌ ERR</span>';
+                    matchCell = '<span style="color:red">No match</span>';
+                }
+
+                tr.innerHTML = '<td>"' + item.original + '"</td><td>' + matchCell + '</td><td style="text-align:center">' + item.qty + '</td><td style="text-align:center">' + statusBadge + '</td>';
+
+                const selector = tr.querySelector('.match-selector');
+                if (selector) selector.addEventListener('change', (e) => { item.selectedId = e.target.value; validateQuickAdd(); });
+
+                reviewBody.appendChild(tr);
+            });
+            validateQuickAdd();
+        }
+
+        function validateQuickAdd() {
+            if (!confirmQuickAddBtn) return;
+            const hasUnresolved = itemsInReview.some(item => !item.selectedId);
+            confirmQuickAddBtn.disabled = hasUnresolved;
+        }
+
+        if (confirmQuickAddBtn) {
+            confirmQuickAddBtn.addEventListener('click', () => {
+                itemsInReview.forEach(item => {
+                    if (item.selectedId) {
+                        const input = document.getElementById('qty-' + item.selectedId);
+                        if (input) {
+                            input.value = item.qty;
+                        }
+                    }
+                });
+                reviewSection.style.display = 'none';
+                quickAddInput.value = '';
+                updateCartBadge();
+            });
+        }
+
+        if (clearQuickAddBtn) {
+            clearQuickAddBtn.addEventListener('click', () => {
+                quickAddInput.value = '';
+                if (reviewSection) reviewSection.style.display = 'none';
+            });
+        }
+
+        // Speech Recognition
+        let recognition = null;
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Stop after one phrase
+            recognition.lang = 'en-IN'; // Default to Indian English for better Marathi word capture
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                if (speakBtn) {
+                    speakBtn.classList.add('pulse-mic');
+                    speakBtn.innerText = '🛑 Stop';
+                }
+            };
+
+            recognition.onresult = (e) => {
+                const transcript = e.results[0][0].transcript;
+                if (quickAddInput) {
+                    // specific for multiple items fix
+                    const potentialComma = (quickAddInput.value && !quickAddInput.value.trim().endsWith(',')) ? ', ' : '';
+                    quickAddInput.value += potentialComma + transcript;
+                }
+            };
+
+            recognition.onerror = (e) => {
+                console.error("Speech error", e);
+                if (speakBtn) {
+                    speakBtn.classList.remove('pulse-mic');
+                    speakBtn.innerText = '🎤 Speak';
+                }
+                alert("Speech recognition error: " + e.error);
+            };
+
+            recognition.onend = () => {
+                if (speakBtn) {
+                    speakBtn.classList.remove('pulse-mic');
+                    speakBtn.innerText = '🎤 Speak';
+                }
+            };
+        } else {
+            console.warn("Web Speech API not supported.");
+            if (speakBtn) {
+                speakBtn.style.display = 'none'; // Hide if not supported
+            }
+        }
+
+        if (speakBtn) {
+            speakBtn.addEventListener('click', () => {
+                if (!recognition) {
+                    alert("Voice input is not supported in this browser. Try Chrome.");
+                    return;
+                }
+
+                if (speakBtn.classList.contains('pulse-mic')) {
+                    recognition.stop();
+                } else {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.error("Start error", e);
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
