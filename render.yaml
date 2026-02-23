@@ -3,6 +3,7 @@ services:
   - type: web
     name: hotel-ordering-app
     runtime: python
+    pythonVersion: "3.12"
     region: oregon
     plan: free
     rootDir: Hotel_ordering_app-main
