@@ -1,0 +1,552 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --accent-color: #6366f1;
+        --accent-bg: #e0e7ff;
+        --card-radius: 8px;
+        /* Rectangular look */
+        --transition: all 0.2s ease-in-out;
+        --text-primary: #1e293b;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+    }
+
+    .report-page {
+        padding: 0.75rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding-bottom: 80px;
+        /* Space for bottom nav */
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1.25rem;
+        padding: 0.25rem 0;
+    }
+
+    .btn-back {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: #f1f5f9;
+        color: #475569;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: var(--transition);
+        border: 1px solid var(--border);
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    /* 2. Search & Filter Bar */
+    .search-filter-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 1.5rem;
+        width: 100%;
+    }
+
+    .search-container {
+        flex: 1;
+        position: relative;
+        display: flex;
+    }
+
+    .search-container i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        font-size: 0.95rem;
+        background: #fff;
+        transition: var(--transition);
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        outline: none;
+    }
+
+    .btn-filter-toggle {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        color: var(--text-primary);
+        transition: var(--transition);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+    }
+
+    /* 3. Bottom Sheet (Filters) */
+    .bottom-sheet-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(2px);
+        z-index: 1000;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .bottom-sheet {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: -100%;
+        background: #fff;
+        border-radius: 24px 24px 0 0;
+        padding: 1.5rem;
+        z-index: 1001;
+        transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .bottom-sheet.active {
+        bottom: 0;
+    }
+
+    .bottom-sheet-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+
+    .sheet-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .sheet-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .handle {
+        width: 40px;
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        margin: -10px auto 15px auto;
+    }
+
+    .filter-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        font-size: 0.95rem;
+        background: #f8fafc;
+    }
+
+    .sheet-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .btn-sheet {
+        padding: 0.85rem;
+        border-radius: 14px;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .btn-apply-filters {
+        background: var(--accent-color);
+        color: #fff;
+    }
+
+    .btn-export-sheet {
+        background: #10b981;
+        color: #fff;
+    }
+
+    .btn-reset-sheet {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    /* Desktop Table */
+    .desktop-view {
+        background: #fff;
+        border-radius: var(--card-radius);
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .report-table th {
+        background: #f8fafc;
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .report-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+    }
+
+    .report-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .inv-num {
+        font-weight: 800;
+        color: var(--accent-color);
+    }
+
+    /* 4. Invoice Cards Layout */
+    .mobile-view {
+        display: none;
+        /* Desktop first */
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .inv-card {
+        display: block;
+        text-decoration: none;
+        background: #fff;
+        border-radius: var(--card-radius);
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        transition: var(--transition);
+        color: inherit;
+    }
+
+    .inv-card:hover {
+        border-color: var(--accent-color);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .inv-id {
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--accent-color);
+    }
+
+    .card-customer {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+    }
+
+    .badge-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    /* Status Badges */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    .st-PAID,
+    .st-COMPLETED {
+        background: #22c55e;
+        color: #fff;
+    }
+
+    .st-GENERATED,
+    .st-PENDING {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .st-CANCELLED {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .payment-badge {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-weight: 800;
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    @media (max-width: 768px) {
+        .desktop-view {
+            display: none;
+        }
+
+        .mobile-view {
+            display: flex;
+        }
+
+        .page-header {
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-back {
+            width: 40px;
+            justify-content: center;
+        }
+
+        .filter-input-group {
+            min-width: 100%;
+        }
+
+        .btn-apply,
+        .btn-reset {
+            flex: 1;
+        }
+    }
+</style>
+
+<div class="report-page">
+    <div class="page-header">
+        <a href="/admin/reports" class="btn-back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div class="header-title">
+            <h1>Invoices</h1>
+        </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="search-filter-wrapper">
+        <form method="GET" action="/admin/reports/invoices" class="search-container" id="searchForm">
+            <i class="fas fa-search">🔍</i>
+            <input type="text" name="search" placeholder="Search Invoice or Customer" class="search-input"
+                value="{{ search }}">
+            <input type="hidden" name="status" value="{{ status }}">
+        </form>
+        <button class="btn-filter-toggle" onclick="toggleBottomSheet()" type="button" aria-label="Filters">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Filter Bottom Sheet -->
+    <div class="bottom-sheet-overlay" id="sheetOverlay" onclick="toggleBottomSheet()"></div>
+    <div class="bottom-sheet" id="filterSheet">
+        <div class="handle"></div>
+        <div class="sheet-header">
+            <span class="sheet-title">Filters & Options</span>
+            <button onclick="toggleBottomSheet()" style="background:none; border:none; font-size: 1.5rem;">×</button>
+        </div>
+
+        <form method="GET" action="/admin/reports/invoices">
+            <input type="hidden" name="search" value="{{ search }}">
+            <div class="filter-section">
+                <label class="filter-label">Payment Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">All Statuses</option>
+                    <option value="GENERATED" {% if status=='GENERATED' %}selected{% endif %}>Generated</option>
+                    <option value="PAID" {% if status=='PAID' %}selected{% endif %}>Paid</option>
+                    <option value="PENDING" {% if status=='PENDING' %}selected{% endif %}>Pending</option>
+                    <option value="CANCELLED" {% if status=='CANCELLED' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+
+            <div class="sheet-actions">
+                <button type="submit" class="btn-sheet btn-apply-filters">Apply Filters</button>
+                <button type="submit" name="export" value="true" class="btn-sheet btn-export-sheet">Export
+                    Excel</button>
+                <a href="/admin/reports/invoices" class="btn-sheet btn-reset-sheet">Reset All</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Desktop Table -->
+    <div class="desktop-view">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Invoice No</th>
+                    <th>PO No</th>
+                    <th>Customer Name</th>
+                    <th>Payment Mode</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr>
+                    <td><span class="inv-num">{{ invoice.invoice_no }}</span></td>
+                    <td>{{ invoice.po_display_id }}</td>
+                    <td style="font-weight: 600;">{{ invoice.business_name or invoice.customer_name }}</td>
+                    <td>
+                        {% if invoice.payment_mode == 'CASH' %}
+                        <span class="payment-badge" style="background: #dcfce7; color: #166534;">💵 CASH</span>
+                        {% elif invoice.payment_mode == 'ONLINE' %}
+                        <span class="payment-badge" style="background: #e0e7ff; color: #3730a3;">💳 ONLINE</span>
+                        {% else %}
+                        <span class="payment-badge" style="background: #f1f5f9; color: #475569;">{{ invoice.payment_mode
+                            or 'MIXED' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge st-{{ invoice.status }}">
+                            {{ invoice.status }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <a href="/invoice/po/{{ invoice.po_id }}" class="btn-view">View Billing</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile View -->
+    <div class="mobile-view">
+        {% for invoice in invoices %}
+        <a href="/invoice/po/{{ invoice.po_id }}" class="inv-card">
+            <div class="card-top">
+                <span class="inv-id">{{ invoice.invoice_no }}</span>
+                <span class="badge st-{{ invoice.status }}">{{ invoice.status }}</span>
+            </div>
+
+            <div class="card-customer">{{ invoice.business_name or invoice.customer_name }}</div>
+
+            <div class="badge-row">
+                {% if invoice.payment_mode == 'CASH' %}
+                <span class="payment-badge">💵 CASH</span>
+                {% elif invoice.payment_mode == 'ONLINE' %}
+                <span class="payment-badge">💳 ONLINE</span>
+                {% else %}
+                <span class="payment-badge">{{ invoice.payment_mode or 'MIXED' }}</span>
+                {% endif %}
+
+                <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: auto;">
+                    {{ invoice.po_display_id }}
+                </span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Empty States -->
+    {% if not invoices %}
+    <div class="empty-state"
+        style="text-align: center; padding: 4rem 1.5rem; background: #fff; border-radius: var(--card-radius); border: 2px dashed #e2e8f0; color: #94a3b8; margin-top: 1rem;">
+        <div style="font-size: 3.5rem; margin-bottom: 1rem;">🧾</div>
+        <h3 style="font-weight: 800; color: var(--text-primary);">No invoices found</h3>
+        <p style="font-size: 0.9rem;">Try adjusting your filters or search to find what you're looking for.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function toggleBottomSheet() {
+        const sheet = document.getElementById('filterSheet');
+        const overlay = document.getElementById('sheetOverlay');
+        sheet.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+</script>
+
+{% endblock %}

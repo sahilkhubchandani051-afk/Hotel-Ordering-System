@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>My Profile</h1>
+    <a href="/customer/dashboard" class="btn btn-primary">Back to Dashboard</a>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    {% if error %}
+    <div
+        style="background: var(--bg-status-danger); color: var(--text-status-danger); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+        {{ error }}
+    </div>
+    {% endif %}
+    {% if success %}
+    <div
+        style="background: var(--bg-status-success); color: var(--text-status-success); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+        {{ success }}
+    </div>
+    {% endif %}
+
+    <form action="/customer/profile" method="post">
+        <label>Email (Cannot Change)</label>
+        <input type="text" value="{{ user.email }}" class="form-control" disabled>
+
+        <label>Full Name</label>
+        <input type="text" name="name" value="{{ user.name }}" class="form-control" required>
+
+        <label>Mobile Number</label>
+        <input type="text" name="mobile" value="{{ user.mobile or '' }}" class="form-control"
+            placeholder="e.g. 9876543210">
+
+        <label>Address</label>
+        <textarea name="address" class="form-control" rows="3"
+            placeholder="Delivery Address">{{ user.address or '' }}</textarea>
+
+        <label>Display Options</label>
+        <div
+            style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 1.5rem;">
+            <span>Dark Mode</span>
+            <label class="switch">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
+
+        <button type="submit" class="btn btn-success" style="width: 100%;">Update Profile</button>
+    </form>
+
+    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border); text-align: center;">
+        <h4 style="margin-bottom: 1rem;">Security</h4>
+        <a href="/auth/change-password-otp" class="btn btn-secondary">Change
+            Password</a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggle = document.getElementById('darkModeToggle');
+        if (localStorage.getItem('theme') === 'dark') {
+            toggle.checked = true;
+        }
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
+                document.documentElement.classList.add('dark-mode');
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    });
+</script>
+{% endblock %}

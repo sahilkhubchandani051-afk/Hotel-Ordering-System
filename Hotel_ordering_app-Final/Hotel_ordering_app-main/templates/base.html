@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Ordering System</title>
+    <!-- Use system fonts plus Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css?v=2.0">
+    <script>
+        // Apply theme immediately to prevent flash
+        (function () {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            }
+        })();
+    </script>
+    <style>
+        /* Minimal Critical CSS */
+        .notification-wrapper {
+            position: relative;
+            margin-left: 15px;
+            cursor: pointer;
+        }
+
+        .notification-btn {
+            background: none;
+            border: none;
+            color: white;
+            padding: 8px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notif-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--danger, #dc3545);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: none;
+            /* Flex when active */
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--primary, #2c3e50);
+        }
+
+        .notification-drawer {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: -10px;
+            width: 320px;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-drawer.active {
+            display: block;
+        }
+
+        .notif-header {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .notif-item {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.2s;
+        }
+
+        .notif-item:hover {
+            background: #f9f9f9;
+        }
+
+        .notif-item.unread {
+            background: #e3f2fd;
+        }
+
+        .notif-msg {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .notif-time {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .blue-dot {
+            width: 8px;
+            height: 8px;
+            background: #2196f3;
+            border-radius: 50%;
+        }
+
+        .empty-notif {
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+        }
+
+        /* Mobile override */
+        @media (max-width: 600px) {
+            .notification-drawer {
+                position: fixed;
+                top: 60px;
+                left: 10px;
+                right: 10px;
+                width: auto;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="{% if request.session.user and request.session.user.role == 'admin' %}admin-portal{% endif %}">
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="/" class="brand">HotelSys</a>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+
+        <div class="notification-wrapper dropdown">
+            <button class="notification-btn" id="notificationBtn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notif-badge" id="notificationBadge"></span>
+            </button>
+            <div class="notification-drawer" id="notificationDrawer">
+                <div class="notif-header">Notifications</div>
+                <div id="notificationList">
+                    <!-- Loaded via JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-links" id="navLinks">
+            {% if request.session.user %}
+            {% if request.session.user.role == 'admin' %}
+            <a href="/admin/dashboard">Dashboard</a>
+            <a href="/admin/products">Products</a>
+            <a href="/admin/pr_list">Requests</a>
+            <a href="/admin/direct_sales">Direct Sales</a>
+            <div class="dropdown" id="reportsDropdown">
+                <button class="dropbtn" onclick="toggleDropdown(event)">
+                    Reports
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 9l6 6 6-6"></path>
+                    </svg>
+                </button>
+                <div class="dropdown-content" id="reportsDropdownContent">
+                    <a href="/admin/reports">Reports Dashboard</a>
+                    <a href="/admin/reports/ims/stock-summary" style="border-top: 1px solid var(--border);">Stock
+                        Summary</a>
+                    <a href="/admin/reports/ims/stock-movement">Stock Movement</a>
+                    <a href="/admin/reports/ims/sales-vs-stock">Sales vs Stock</a>
+                    <a href="/admin/reports/ims/reorder-planning">Reorder Planning</a>
+                    <a href="/admin/inventory/ledger">Product Ledger</a>
+                </div>
+            </div>
+            {% else %}
+            <a href="/customer/dashboard">Dashboard</a>
+            <a href="/customer/create_pr">New Order</a>
+            <a href="/customer/quotations">My Orders</a>
+            <a href="/customer/invoices">My Invoices</a>
+            {% endif %}
+            <div class="dropdown" id="userDropdown">
+                <button class="dropbtn" onclick="toggleDropdown(event)">
+                    {% if request.session.user.role == 'admin' %}Administrator{% else %}{{ request.session.user.name
+                    }}{% endif %}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 9l6 6 6-6"></path>
+                    </svg>
+                </button>
+                <div class="dropdown-content" id="dropdownContent">
+                    {% if request.session.user.role == 'admin' %}
+                    <a href="/admin/profile">My Profile</a>
+                    {% else %}
+                    <a href="/customer/profile">My Profile</a>
+                    {% endif %}
+                    <a href="/logout"
+                        style="color: var(--danger) !important; border-top: 1px solid var(--border);">Logout</a>
+                </div>
+            </div>
+            {% else %}
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    {% if request.session.user %}
+    <div class="mobile-bottom-nav">
+        <nav>
+            {% if request.session.user.role == 'customer' %}
+            <a href="/customer/dashboard" class="{% if request.path == '/customer/dashboard' %}active{% endif %}">
+                <span class="nav-icon">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                </span>
+                <span>Home</span>
+            </a>
+            <a href="/customer/create_pr" class="{% if '/create_pr' in request.path %}active{% endif %}">
+                <span class="nav-icon">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </span>
+                <span>New Order</span>
+            </a>
+            <a href="/customer/cart"
+                class="{% if '/cart' in request.path or '/draft_pr' in request.path %}active{% endif %}">
+                <span class="nav-icon">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </span>
+                <span>Cart</span>
+            </a>
+            <a href="/customer/quotations" class="{% if '/quotations' in request.path %}active{% endif %}">
+                <span class="nav-icon">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                </span>
+                <span>Orders</span>
+            </a>
+            <a href="/customer/invoices" class="{% if '/invoices' in request.path %}active{% endif %}">
+                <span class="nav-icon">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </span>
+                <span>Invoices</span>
+            </a>
+            <a href="/customer/profile" class="{% if '/profile' in request.path %}active{% endif %}">
+                <span class="nav-icon">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                </span>
+                <span>Profile</span>
+            </a>
+            {% else %}
+            <!-- Unified Admin Mobile Navigation -->
+            <a href="/admin/dashboard" class="{% if request.path == '/admin/dashboard' %}active{% endif %}">
+                <span class="nav-icon" style="font-size: 24px;">🏠</span>
+                <span>Home</span>
+            </a>
+            <a href="/admin/products"
+                class="{% if '/products' in request.path or '/admin/products/form' in request.path %}active{% endif %}">
+                <span class="nav-icon" style="font-size: 24px;">📦</span>
+                <span>Products</span>
+            </a>
+            <a href="/admin/pr_list"
+                class="{% if '/pr_list' in request.path or '/pr_view' in request.path %}active{% endif %}">
+                <span class="nav-icon" style="font-size: 24px;">📥</span>
+                <span>Requests</span>
+            </a>
+            <a href="/admin/direct_sales" class="{% if '/direct_sales' in request.path %}active{% endif %}">
+                <span class="nav-icon" style="font-size: 24px;">💰</span>
+                <span>Sales</span>
+            </a>
+            <a href="/admin/reports" class="{% if '/reports' in request.path %}active{% endif %}">
+                <span class="nav-icon" style="font-size: 24px;">📊</span>
+                <span>Reports</span>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        &copy; 2026 Hotel Ordering System. All rights reserved.
+    </div>
+
+    <script src="/static/js/password-toggle.js?v=1.1"></script>
+    <script src="/static/js/notifications.js?v=1.0"></script>
+    <script>
+        // Initialization for document.body dark mode if not already set (fallback)
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        });
+
+        function toggleDropdown(event) {
+            event.stopPropagation();
+            // Find the dropdown content associated with this button
+            const btn = event.currentTarget;
+            const dropdown = btn.closest('.dropdown');
+            const content = dropdown.querySelector('.dropdown-content');
+
+            // Close other open dropdowns first
+            document.querySelectorAll('.dropdown-content').forEach(d => {
+                if (d !== content) d.style.display = 'none';
+            });
+
+            const isVisible = content.style.display === 'block';
+            content.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function toggleMobileMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', function (event) {
+            if (!event.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+            }
+
+            // Close mobile menu when clicking outside
+            const navLinks = document.getElementById('navLinks');
+            const mobileBtn = document.querySelector('.mobile-menu-btn');
+            if (navLinks.classList.contains('active') && !event.target.closest('.nav-links') && !event.target.closest('.mobile-menu-btn')) {
+                navLinks.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+
+</html>

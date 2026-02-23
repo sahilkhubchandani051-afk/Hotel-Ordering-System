@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header-section" style="margin-bottom: 1rem;">
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 0.5rem;">
+        <a href="/admin/inventory" style="text-decoration:none; color:var(--text-muted);">← Back</a>
+    </div>
+    <h1>Stock Transfer</h1>
+    <div
+        style="display: flex; gap: 1rem; align-items: center; background: #eef2f7; padding: 0.5rem 1rem; border-radius: 8px; width: fit-content; margin-bottom: 1rem;">
+        <span style="font-weight: bold; color: #4A5568;">FROM: Godown</span>
+        <span style="color: #A0AEC0;">→</span>
+        <span style="font-weight: bold; color: #2D3748;">TO: Shop</span>
+    </div>
+</div>
+
+<!-- Controls -->
+<div class="card"
+    style="padding: 1rem; margin-bottom: 1rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+
+    <!-- Header Inputs -->
+    <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+        <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: #4A5568;">Transfer Date</label>
+            <input type="date" id="transferDate" class="form-control" style="font-size: 0.9rem; padding: 6px 12px;">
+        </div>
+        <div style="flex: 1; max-width: 400px;">
+            <label style="font-size: 0.8rem; font-weight: 600; color: #4A5568;">Reference / Note</label>
+            <input type="text" id="transferNote" class="form-control" placeholder="e.g. Restock for Weekend"
+                style="font-size: 0.9rem; padding: 6px 12px;">
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+        <div style="flex: 1; min-width: 200px;">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search products..."
+                onkeyup="filterTable()">
+        </div>
+        <div>
+            <button onclick="submitTransfer()" class="btn btn-primary" id="transferBtn">Confirm Transfer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Grid -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                <tr>
+                    <th style="padding: 1rem; text-align: left; width: 50%;">Product</th>
+                    <th style="padding: 1rem; text-align: center; width: 25%;">Available (Godown)</th>
+                    <th style="padding: 1rem; text-align: left; width: 25%;">Transfer Qty</th>
+                </tr>
+            </thead>
+            <tbody id="productTableBody">
+                {% for p in products %}
+                <tr class="product-row" data-name="{{ p.name.lower() }}">
+                    <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #eee;">
+                        <div style="font-weight: 500;">{{ p.name }}</div>
+                        <div style="font-size: 0.8rem; color: #666;">{{ p.unit }}</div>
+                    </td>
+                    <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #eee; text-align: center;">
+                        <span class="badge {{ 'badge-success' if p.godown_stock > 0 else 'badge-gray' }}">
+                            {{ p.godown_stock }}
+                        </span>
+                        {% if p.godown_stock <= 0 %} <div style="font-size: 0.7rem; color: #e53e3e;">Out of Stock
+    </div>
+    {% endif %}
+    </td>
+    <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #eee;">
+        <input type="number" class="form-control qty-input" data-id="{{ p.id }}" data-max="{{ p.godown_stock }}"
+            placeholder="0" min="0" max="{{ p.godown_stock }}" step="0.01" {{ 'disabled' if p.godown_stock <=0 else ''
+            }}>
+    </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+</div>
+</div>
+
+<script>
+    // Set default date to today
+    document.getElementById('transferDate').valueAsDate = new Date();
+
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('.product-row');
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name');
+            if (name.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    async function submitTransfer() {
+        const inputs = document.querySelectorAll('.qty-input');
+        const items = [];
+        let hasError = false;
+
+        // Iterate inputs
+        inputs.forEach(input => {
+            const qty = parseFloat(input.value);
+            if (qty > 0) {
+                const max = parseFloat(input.getAttribute('data-max'));
+                if (qty > max) {
+                    input.style.borderColor = 'red';
+                    hasError = true;
+                } else {
+                    input.style.borderColor = '#ddd';
+                    items.push({
+                        product_id: parseInt(input.getAttribute('data-id')),
+                        qty: qty
+                    });
+                }
+            }
+        });
+
+        if (hasError) {
+            alert("Cannot transfer more than available stock!");
+            return;
+        }
+
+        if (items.length === 0) {
+            alert("Please enter quantity to transfer.");
+            return;
+        }
+
+        const dateVal = document.getElementById('transferDate').value;
+        const noteVal = document.getElementById('transferNote').value.trim();
+
+        if (!confirm(`Transfer ${items.length} products from Godown to Shop?`)) {
+            return;
+        }
+
+        const btn = document.getElementById('transferBtn');
+        btn.disabled = true;
+        btn.innerText = "Processing...";
+
+        try {
+            const response = await fetch('/admin/inventory/bulk-transfer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items: items,
+                    from_loc: 1, // Godown
+                    to_loc: 2,   // Shop
+                    date: dateVal,
+                    remark: noteVal
+                })
+            });
+
+            const res = await response.json();
+            if (res.success) {
+                alert(res.message);
+                window.location.href = "/admin/inventory";
+            } else {
+                alert("Error: " + (res.error || res.message || "Unknown error"));
+                btn.disabled = false;
+                btn.innerText = "Confirm Transfer";
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Failed to connect to server.");
+            btn.disabled = false;
+            btn.innerText = "Confirm Transfer";
+        }
+    }
+</script>
+{% endblock %}

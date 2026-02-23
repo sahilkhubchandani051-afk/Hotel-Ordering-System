@@ -1,0 +1,516 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --accent-color: #6366f1;
+        --accent-bg: #e0e7ff;
+        --card-radius: 8px;
+        /* Rectangular look */
+        --transition: all 0.2s ease-in-out;
+        --text-primary: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+    }
+
+    .report-page {
+        padding: 0.75rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding-bottom: 80px;
+        /* Space for bottom nav */
+    }
+
+    /* 1. Header (Mobile) */
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1.25rem;
+        padding: 0.25rem 0;
+    }
+
+    .btn-back {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: #f1f5f9;
+        color: #475569;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: var(--transition);
+        border: 1px solid var(--border-color);
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    /* 2. Search & Filter Bar */
+    .search-filter-wrapper {
+        display: flex;
+        align-items: center;
+        /* Align vertically */
+        gap: 8px;
+        margin-bottom: 1.5rem;
+        width: 100%;
+    }
+
+    .search-container {
+        flex: 1;
+        /* Take remaining space */
+        position: relative;
+        display: flex;
+        /* Ensure form doesn't block layout */
+    }
+
+    .search-container i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        font-size: 0.95rem;
+        background: #fff;
+        transition: var(--transition);
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        outline: none;
+    }
+
+    .btn-filter-toggle {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        cursor: pointer;
+        color: var(--text-primary);
+        transition: var(--transition);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+    }
+
+    .btn-filter-toggle:hover {
+        background: #f1f5f9;
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+    }
+
+    /* 3. Bottom Sheet (Filters) */
+    .bottom-sheet-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(2px);
+        z-index: 1000;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .bottom-sheet {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: -100%;
+        background: #fff;
+        border-radius: 24px 24px 0 0;
+        padding: 1.5rem;
+        z-index: 1001;
+        transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .bottom-sheet.active {
+        bottom: 0;
+    }
+
+    .bottom-sheet-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+
+    .sheet-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .sheet-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .handle {
+        width: 40px;
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        margin: -10px auto 15px auto;
+    }
+
+    .filter-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        font-size: 0.95rem;
+        background: #f8fafc;
+    }
+
+    .sheet-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .btn-sheet {
+        padding: 0.85rem;
+        border-radius: 14px;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .btn-apply-filters {
+        background: var(--accent-color);
+        color: #fff;
+    }
+
+    .btn-export-sheet {
+        background: #10b981;
+        color: #fff;
+    }
+
+    .btn-reset-sheet {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    /* 4. PO Cards Layout */
+    .po-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .po-card {
+        display: block;
+        text-decoration: none;
+        background: #fff;
+        border-radius: var(--card-radius);
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        transition: var(--transition);
+        color: inherit;
+    }
+
+    .po-card:hover {
+        border-color: var(--accent-color);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .po-id {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--accent-color);
+    }
+
+    .po-amount {
+        font-size: 1.1rem;
+        font-weight: 900;
+        color: var(--text-primary);
+    }
+
+    .customer-name {
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+    }
+
+    .badge-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+    }
+
+    .badge {
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    /* Badge Colors */
+    .st-Accepted {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .st-Partially {
+        background: #ffedd5;
+        color: #9a3412;
+    }
+
+    .st-Rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .st-OPEN {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .st-INVOICED {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+
+    .st-CANCELLED {
+        background: #f1f5f9;
+        color: #64748b;
+        text-decoration: line-through;
+    }
+
+    .btn-view-details {
+        display: none;
+    }
+
+    /* Empty States */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 1.5rem;
+        background: #fff;
+        border-radius: var(--card-radius);
+        border: 2px dashed #e2e8f0;
+        color: #94a3b8;
+    }
+
+    .empty-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Desktop Adjustments */
+    @media (min-width: 769px) {
+        .po-list {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .bottom-sheet {
+            max-width: 400px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 24px;
+            bottom: 50%;
+            top: auto;
+            display: none;
+        }
+
+        .bottom-sheet.active {
+            display: block;
+            bottom: auto;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+    }
+</style>
+
+<div class="report-page">
+    <div class="page-header">
+        <a href="/admin/reports" class="btn-back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div class="header-title">
+            <h1>Purchase Orders</h1>
+        </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="search-filter-wrapper">
+        <form method="GET" action="/admin/reports/pos" class="search-container" id="searchForm">
+            <i class="fas fa-search">🔍</i>
+            <input type="text" name="search" placeholder="Search PO or Customer" class="search-input"
+                value="{{ search }}">
+            <input type="hidden" name="status" value="{{ status }}">
+            <input type="hidden" name="delivery_status" value="{{ delivery_status }}">
+        </form>
+        <button class="btn-filter-toggle" onclick="toggleBottomSheet()" type="button" aria-label="Filters">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Filter Bottom Sheet -->
+    <div class="bottom-sheet-overlay" id="sheetOverlay" onclick="toggleBottomSheet()"></div>
+    <div class="bottom-sheet" id="filterSheet">
+        <div class="handle"></div>
+        <div class="sheet-header">
+            <span class="sheet-title">Filters & Options</span>
+            <button onclick="toggleBottomSheet()" style="background:none; border:none; font-size: 1.5rem;">×</button>
+        </div>
+
+        <form method="GET" action="/admin/reports/pos">
+            <input type="hidden" name="search" value="{{ search }}">
+
+            <div class="filter-section">
+                <label class="filter-label">Acceptance Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">All Acceptance Statuses</option>
+                    <option value="Accepted" {% if status=='Accepted' %}selected{% endif %}>Accepted</option>
+                    <option value="Partially Accepted" {% if status=='Partially Accepted' %}selected{% endif %}>
+                        Partially Accepted</option>
+                </select>
+            </div>
+
+            <div class="filter-section">
+                <label class="filter-label">Delivery Status</label>
+                <select name="delivery_status" class="filter-select">
+                    <option value="">All Delivery Statuses</option>
+                    <option value="OPEN" {% if delivery_status=='OPEN' %}selected{% endif %}>Open</option>
+                    <option value="INVOICED" {% if delivery_status=='INVOICED' %}selected{% endif %}>Invoiced</option>
+                    <option value="CANCELLED" {% if delivery_status=='CANCELLED' %}selected{% endif %}>Cancelled
+                    </option>
+                </select>
+            </div>
+
+            <div class="sheet-actions">
+                <button type="submit" class="btn-sheet btn-apply-filters">Apply Filters</button>
+                <button type="submit" name="export" value="true" class="btn-sheet btn-export-sheet">Export
+                    Excel</button>
+                <a href="/admin/reports/pos" class="btn-sheet btn-reset-sheet">Reset All</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- PO List -->
+    <div class="po-list">
+        {% for po in pos %}
+        <a href="/admin/orders/{{ po.id }}" class="po-card">
+            <div class="card-top">
+                <span class="po-id">{{ po.display_id or ('PO-' ~ po.id) }}</span>
+                <span class="po-amount">₹{{ "%.2f"|format(po.total_amount) }}</span>
+            </div>
+
+            <div class="customer-name">{{ po.business_name or po.customer_name }}</div>
+
+            <div class="badge-row">
+                <!-- Acceptance Badge -->
+                {% if po.pr_status|upper == 'ACCEPTED' %}
+                <span class="badge st-Accepted">ACCEPTED</span>
+                {% elif po.pr_status|upper == 'PARTIALLY ACCEPTED' %}
+                <span class="badge st-Partially">PARTIAL</span>
+                {% elif po.pr_status|upper == 'REJECTED' %}
+                <span class="badge st-Rejected">REJECTED</span>
+                {% else %}
+                <span class="badge" style="background:#f1f5f9; color:#475569;">{{ po.pr_status }}</span>
+                {% endif %}
+
+                <!-- Delivery Badge -->
+                {% if po.delivery_status|upper == 'OPEN' %}
+                <span class="badge st-OPEN">OPEN</span>
+                {% elif po.delivery_status|upper == 'INVOICED' %}
+                <span class="badge st-INVOICED">INVOICED</span>
+                {% elif po.delivery_status|upper == 'CANCELLED' %}
+                <span class="badge st-CANCELLED">CANCELLED</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Empty States -->
+    {% if not pos %}
+    <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>No POs found</h3>
+        <p>Try adjusting your search or filters to find what you're looking for.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function toggleBottomSheet() {
+        const sheet = document.getElementById('filterSheet');
+        const overlay = document.getElementById('sheetOverlay');
+        sheet.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+
+    // Auto-submit search on enter (default behavior)
+    document.querySelector('.search-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            this.form.submit();
+        }
+    });
+</script>
+{% endblock %}

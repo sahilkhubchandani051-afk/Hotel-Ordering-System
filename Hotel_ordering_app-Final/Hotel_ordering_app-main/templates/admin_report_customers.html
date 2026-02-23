@@ -1,0 +1,693 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --accent-color: #64748b;
+        --accent-bg: #f1f5f9;
+        --card-radius: 8px;
+        --transition: all 0.2s ease-in-out;
+        --text-primary: #1e293b;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+        --star-gold: #f59e0b;
+    }
+
+    .report-page {
+        padding: 0.75rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding-bottom: 80px;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1.25rem;
+        padding: 0.25rem 0;
+    }
+
+    .btn-back {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: #f1f5f9;
+        color: #475569;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: var(--transition);
+        border: 1px solid var(--border);
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    /* 2. Search & Filter Bar */
+    .search-filter-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 1.5rem;
+        width: 100%;
+    }
+
+    .search-container {
+        flex: 1;
+        position: relative;
+        display: flex;
+    }
+
+    .search-container i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        font-size: 0.95rem;
+        background: #fff;
+        transition: var(--transition);
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
+        outline: none;
+    }
+
+    .btn-filter-toggle {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        color: var(--text-primary);
+        transition: var(--transition);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+    }
+
+    /* 3. Bottom Sheet */
+    .bottom-sheet-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(2px);
+        z-index: 1000;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .bottom-sheet {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: -100%;
+        background: #fff;
+        border-radius: 24px 24px 0 0;
+        padding: 1.5rem;
+        z-index: 1001;
+        transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .bottom-sheet.active {
+        bottom: 0;
+    }
+
+    .bottom-sheet-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+
+    .sheet-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .sheet-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .handle {
+        width: 40px;
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        margin: -10px auto 15px auto;
+    }
+
+    .filter-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        font-size: 0.95rem;
+        background: #f8fafc;
+    }
+
+    .sheet-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .btn-sheet {
+        padding: 0.85rem;
+        border-radius: 14px;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .btn-apply-filters {
+        background: var(--accent-color);
+        color: #fff;
+    }
+
+    .btn-reset-sheet {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    /* Modern Filter Bar */
+    .filter-card {
+        background: #ffffff;
+        border-radius: var(--card-radius);
+        padding: 1rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+
+    .filter-form {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .filter-input-group {
+        flex: 2;
+        min-width: 250px;
+        position: relative;
+    }
+
+    .filter-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        background: #f8fafc;
+        transition: var(--transition);
+    }
+
+    .filter-input:focus {
+        border-color: var(--accent-color);
+        background: #fff;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.1);
+    }
+
+    .filter-select {
+        flex: 1;
+        min-width: 150px;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .btn-apply {
+        padding: 0.75rem 1.5rem;
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-apply:hover {
+        background: #475569;
+        transform: translateY(-2px);
+    }
+
+    /* Desktop View */
+    .desktop-view {
+        background: #fff;
+        border-radius: var(--card-radius);
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .report-table th {
+        background: #f8fafc;
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .report-table td {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+
+    .star-toggle {
+        font-size: 1.5rem;
+        color: #cbd5e1;
+        cursor: pointer;
+        transition: var(--transition);
+        user-select: none;
+    }
+
+    .star-toggle.active {
+        color: var(--star-gold);
+    }
+
+    .c-name {
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .inline-select {
+        padding: 4px 8px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        font-size: 0.8rem;
+        font-weight: 600;
+        background: #f8fafc;
+    }
+
+    .action-group {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-save {
+        padding: 6px 12px;
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-ledger {
+        padding: 6px 12px;
+        background: #f1f5f9;
+        color: #475569;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Mobile Cards */
+    .mobile-view {
+        display: none;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .customer-card {
+        background: #fff;
+        border-radius: var(--card-radius);
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        position: relative;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .card-body-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 1rem;
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 16px;
+    }
+
+    /* Pagination */
+    .pagination-container {
+        margin-top: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .page-btn {
+        padding: 0.5rem 1rem;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        text-decoration: none;
+        color: #475569;
+        font-weight: 700;
+        transition: var(--transition);
+    }
+
+    .page-btn.active {
+        background: var(--accent-color);
+        color: white;
+        border-color: var(--accent-color);
+    }
+
+    @media (max-width: 768px) {
+        .desktop-view {
+            display: none;
+        }
+
+        .mobile-view {
+            display: flex;
+        }
+    }
+</style>
+
+<div class="report-page">
+    <div class="page-header">
+        <a href="/admin/reports" class="btn-back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div class="header-title">
+            <h1>Customer Master</h1>
+        </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="search-filter-wrapper">
+        <form method="GET" action="/admin/reports/customers" class="search-container" id="searchForm">
+            <i class="fas fa-search">🔍</i>
+            <input type="text" name="search" placeholder="Search Name, Phone, Email..." class="search-input"
+                value="{{ search or '' }}">
+            <input type="hidden" name="category" value="{{ category or '' }}">
+        </form>
+        <button class="btn-filter-toggle" onclick="toggleBottomSheet()" type="button">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Filter Bottom Sheet -->
+    <div class="bottom-sheet-overlay" id="sheetOverlay" onclick="toggleBottomSheet()"></div>
+    <div class="bottom-sheet" id="filterSheet">
+        <div class="handle"></div>
+        <div class="sheet-header">
+            <span class="sheet-title">Filters & Options</span>
+            <button onclick="toggleBottomSheet()" style="background:none; border:none; font-size: 1.5rem;">×</button>
+        </div>
+
+        <form method="GET" action="/admin/reports/customers">
+            <input type="hidden" name="search" value="{{ search or '' }}">
+            <div class="filter-section">
+                <label class="filter-label">Filter by Category</label>
+                <select name="category" class="filter-select">
+                    <option value="">All Categories</option>
+                    {% for cat in category_list %}
+                    <option value="{{ cat.name }}" {% if category==cat.name %}selected{% endif %}>{{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="sheet-actions">
+                <button type="submit" class="btn-sheet btn-apply-filters">Apply Filters</button>
+                <a href="/admin/reports/customers" class="btn-sheet btn-reset-sheet">Reset All</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Desktop View -->
+    <div class="desktop-view">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">★</th>
+                    <th>Customer Details</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Contact Info</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr>
+                    <td>
+                        <span class="star-toggle {% if customer.is_favorite %}active{% endif %}"
+                            data-email="{{ customer.email }}" onclick="toggleStar(this)">
+                            {% if customer.is_favorite %}★{% else %}☆{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="c-name">{{ customer.business_name or customer.name }}</span><br>
+                        {% if customer.business_name and customer.business_name != customer.name %}
+                        <small class="text-muted-2" style="display:block; margin-top:2px;">{{ customer.name }}</small>
+                        {% endif %}
+                        <small style="color: var(--text-muted);">Joined: {{ customer.created_at.split(' ')[0] if
+                            customer.created_at else '-' }}</small>
+                    </td>
+                    <form method="POST" action="/admin/reports/customers/update">
+                        <input type="hidden" name="email" value="{{ customer.email }}">
+                        <td>
+                            <select name="category" class="inline-select">
+                                <option value="">None</option>
+                                {% for cat in category_list %}
+                                <option value="{{ cat.name }}" {% if customer.category==cat.name %}selected{% endif %}>
+                                    {{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="status" class="inline-select">
+                                <option value="Active" {% if customer.status=='Active' %}selected{% endif %}>Active
+                                </option>
+                                <option value="Inactive" {% if customer.status=='Inactive' %}selected{% endif %}>
+                                    Inactive</option>
+                            </select>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; color: #1e293b;">{{ customer.mobile or '-' }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ customer.email }}</div>
+                        </td>
+                        <td>
+                            <div class="action-group">
+                                <button type="submit" class="btn-save">Save</button>
+                                <a href="/admin/reports/ledger?customer_email={{ customer.email }}"
+                                    class="btn-ledger">Ledger</a>
+                            </div>
+                        </td>
+                    </form>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile View -->
+    <div class="mobile-view">
+        {% for customer in customers %}
+        <div class="customer-card">
+            <div class="card-header">
+                <div>
+                    <h3 class="c-name" style="margin: 0; font-size: 1.1rem;">{{ customer.business_name or customer.name
+                        }}</h3>
+                    {% if customer.business_name and customer.business_name != customer.name %}
+                    <div style="font-size: 0.85rem; color: #475569; margin-top: 2px;">{{ customer.name }}</div>
+                    {% endif %}
+                    <small style="color: var(--text-muted);">{{ customer.email }}</small>
+                </div>
+                <span class="star-toggle {% if customer.is_favorite %}active{% endif %}"
+                    data-email="{{ customer.email }}" onclick="toggleStar(this)">
+                    {% if customer.is_favorite %}★{% else %}☆{% endif %}
+                </span>
+            </div>
+
+            <form method="POST" action="/admin/reports/customers/update">
+                <input type="hidden" name="email" value="{{ customer.email }}">
+                <div class="card-body-grid">
+                    <div>
+                        <span
+                            style="font-size: 0.65rem; text-transform: uppercase; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 4px;">Category</span>
+                        <select name="category" class="inline-select" style="width: 100%;">
+                            <option value="">None</option>
+                            {% for cat in category_list %}
+                            <option value="{{ cat.name }}" {% if customer.category==cat.name %}selected{% endif %}>{{
+                                cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <span
+                            style="font-size: 0.65rem; text-transform: uppercase; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 4px;">Status</span>
+                        <select name="status" class="inline-select" style="width: 100%;">
+                            <option value="Active" {% if customer.status=='Active' %}selected{% endif %}>Active</option>
+                            <option value="Inactive" {% if customer.status=='Inactive' %}selected{% endif %}>Inactive
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="action-group" style="margin-top: 1rem;">
+                    <button type="submit" class="btn-apply" style="flex: 1; padding: 0.6rem;">Save Changes</button>
+                    <a href="/admin/reports/ledger?customer_email={{ customer.email }}" class="btn-ledger"
+                        style="flex: 1; display: flex; align-items: center; justify-content: center;">View Ledger</a>
+                </div>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination-container">
+        <div style="display: flex; gap: 8px;">
+            {% for p in range(1, total_pages + 1) %}
+            <a href="/admin/reports/customers?page={{ p }}&search={{ search or '' }}&category={{ category or '' }}"
+                class="page-btn {% if p == page %}active{% endif %}">
+                {{ p }}
+            </a>
+            {% endfor %}
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">
+            Showing {{ customers|length }} of {{ total_count }} total entries
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Empty States -->
+    {% if not customers %}
+    <div class="empty-state"
+        style="text-align: center; padding: 4rem 1.5rem; background: #fff; border-radius: var(--card-radius); border: 2px dashed #e2e8f0; color: #94a3b8; margin-top: 1rem;">
+        <div style="font-size: 3.5rem; margin-bottom: 1rem;">👥</div>
+        <h3 style="font-weight: 800; color: var(--text-primary);">No customers found</h3>
+        <p style="font-size: 0.9rem;">Try adjusting your filters or search to find what you're looking for.</p>
+    </div>
+    {% endif %}
+
+    <script>
+        function toggleBottomSheet() {
+            const sheet = document.getElementById('filterSheet');
+            const overlay = document.getElementById('sheetOverlay');
+            sheet.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+    </script>
+</div>
+
+<script>
+    async function toggleStar(element) {
+        const email = element.dataset.email;
+        const isCurrentFav = element.classList.contains('active');
+        const newState = !isCurrentFav;
+        element.innerHTML = newState ? '★' : '☆';
+        element.classList.toggle('active', newState);
+        try {
+            const res = await fetch('/admin/customers/toggle_favorite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, is_favorite: newState })
+            });
+            if (!res.ok) throw new Error();
+        } catch (e) {
+            element.innerHTML = isCurrentFav ? '★' : '☆';
+            element.classList.toggle('active', isCurrentFav);
+            alert('Error updating favorite status');
+        }
+    }
+</script>
+{% endblock %}

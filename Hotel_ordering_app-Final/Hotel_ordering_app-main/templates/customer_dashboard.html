@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Global Dashboard Styles */
+    body {
+        background-color: #F8FAFC;
+    }
+
+    .dashboard-container {
+        padding: 1.5rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* 1. Profile / Welcome Section */
+    .profile-section {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 2rem;
+    }
+
+    .profile-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #CBD5E1;
+        /* Fallback */
+        border: 2px solid #FFFFFF;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Fallback avatar if no image - using boringavatars style or simple svg */
+    .avatar-placeholder {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: 700;
+        border: 2px solid #FFFFFF;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .welcome-text h2 {
+        font-size: 16px;
+        font-weight: 500;
+        color: #64748B;
+        margin: 0;
+    }
+
+    .welcome-text h1 {
+        font-size: 24px;
+        font-weight: 800;
+        color: #1E293B;
+        margin: 2px 0 0 0;
+        line-height: 1.2;
+    }
+
+    /* 2. Main CTA Button */
+    .main-cta-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 56px;
+        background: #4F46E5;
+        /* Indigo-600 */
+        color: #FFFFFF;
+        border-radius: 12px;
+        border: none;
+        font-size: 16px;
+        font-weight: 700;
+        text-decoration: none;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.4);
+        transition: transform 0.2s, background 0.2s;
+        margin-bottom: 2rem;
+    }
+
+    .main-cta-btn:active {
+        transform: scale(0.98);
+        background: #4338CA;
+    }
+
+    .cta-icon {
+        margin-right: 8px;
+        font-size: 20px;
+    }
+
+    /* 3. Quick Action Circles */
+    .circle-actions {
+        display: flex;
+        justify-content: space-around;
+        /* Distribute evenly */
+        margin-bottom: 2.5rem;
+    }
+
+    .action-circle-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .circle-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #F1F5F9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #334155;
+        font-size: 24px;
+        transition: background 0.2s;
+    }
+
+    .action-circle-item:active .circle-icon {
+        background: #E2E8F0;
+    }
+
+    .circle-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #1E293B;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* 4. Recent Activity List */
+    .section-header {
+        font-size: 13px;
+        font-weight: 700;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+        padding-left: 4px;
+    }
+
+    .activity-list {
+        background: #FFFFFF;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        border-bottom: 1px solid #F1F5F9;
+        text-decoration: none;
+        transition: background 0.1s;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-item:active {
+        background: #F8FAFC;
+    }
+
+    .item-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+        flex-shrink: 0;
+    }
+
+    .orange-bg {
+        background: #FFF7ED;
+        color: #EA580C;
+    }
+
+    .blue-bg {
+        background: #EFF6FF;
+        color: #2563EB;
+    }
+
+    .green-bg {
+        background: #F0FDF4;
+        color: #16A34A;
+    }
+
+    .purple-bg {
+        background: #FAF5FF;
+        color: #9333EA;
+    }
+
+    .item-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .item-title {
+        display: block;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1E293B;
+        margin-bottom: 2px;
+    }
+
+    .item-subtitle {
+        display: block;
+        font-size: 13px;
+        color: #64748B;
+    }
+
+    .item-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        background: #E2E8F0;
+        color: #475569;
+    }
+
+    .chevron-right {
+        color: #CBD5E1;
+        width: 20px;
+        height: 20px;
+    }
+</style>
+
+<div class="dashboard-container">
+
+    <!-- 1. Profile Header -->
+    <div class="profile-section">
+        {% if request.session.user.avatar_url %}
+        <img src="{{ request.session.user.avatar_url }}" alt="Avatar" class="profile-avatar">
+        {% else %}
+        <div class="avatar-placeholder">
+            {{ request.session.user.name[0] | upper }}
+        </div>
+        {% endif %}
+        <div class="welcome-text">
+            <h2>Welcome back,</h2>
+            <h1>{{ request.session.user.name }}</h1>
+        </div>
+    </div>
+
+    <!-- 2. Main CTA -->
+    <a href="/customer/create_pr" class="main-cta-btn">
+        <span class="cta-icon">＋</span> NEW PURCHASE REQUEST
+    </a>
+
+    <!-- 3. Quick Action Circles -->
+    <div class="circle-actions">
+        <!-- Support (Placeholder mailto) -->
+        <a href="mailto:support@hotelapp.com" class="action-circle-item">
+            <div class="circle-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 16v-4"></path>
+                    <path d="M12 8h.01"></path>
+                </svg>
+            </div>
+            <span class="circle-label">Support</span>
+        </a>
+
+        <!-- Profile -->
+        <a href="/customer/profile" class="action-circle-item">
+            <div class="circle-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            <span class="circle-label">Profile</span>
+        </a>
+
+        <!-- Logout -->
+        <a href="/logout" class="action-circle-item">
+            <div class="circle-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </div>
+            <span class="circle-label">Log Out</span>
+        </a>
+    </div>
+
+    <!-- 4. Recent Activity & Tasks -->
+    <div class="section-header">RECENT ACTIVITY & TASKS</div>
+
+    <div class="activity-list">
+        <!-- Quotation Inbox -->
+        <a href="/customer/quotations?view=quotations" class="activity-item">
+            <div class="item-icon-wrapper orange-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+            </div>
+            <div class="item-content">
+                <span class="item-title">Quotation Inbox</span>
+                <span class="item-subtitle">Awaiting your approval</span>
+            </div>
+            <div class="item-right">
+                {% if stats.received_qt > 0 %}
+                <span class="status-badge" style="background: #FFF7ED; color: #EA580C;">{{ stats.received_qt }}
+                    NEW</span>
+                {% endif %}
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+        </a>
+
+        <!-- Active Orders -->
+        <a href="/customer/quotations?view=orders" class="activity-item">
+            <div class="item-icon-wrapper blue-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+            </div>
+            <div class="item-content">
+                <span class="item-title">Active Orders</span>
+                <span class="item-subtitle">Orders already placed</span>
+            </div>
+            <div class="item-right">
+                <span class="status-badge">{{ stats.accepted }} ACTIVE</span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+        </a>
+
+        <!-- My Invoices -->
+        <a href="/customer/invoices" class="activity-item">
+            <div class="item-icon-wrapper green-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </div>
+            <div class="item-content">
+                <span class="item-title">My Invoices</span>
+                <span class="item-subtitle">View and pay your records</span>
+            </div>
+            <div class="item-right">
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+        </a>
+
+        <!-- Customer Statement (Linked to Invoices for now as per plan) -->
+        <a href="/customer/statement" class="activity-item">
+            <div class="item-icon-wrapper purple-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20V10"></path>
+                    <path d="M18 20V4"></path>
+                    <path d="M6 20v-4"></path>
+                </svg>
+            </div>
+            <div class="item-content">
+                <span class="item-title">Customer Statement</span>
+                <span class="item-subtitle">Your partial running balance</span>
+            </div>
+            <div class="item-right">
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+        </a>
+    </div>
+
+    <!-- Drafts Reuse (retaining existing logic if user has drafts) -->
+    {% if drafts %}
+    <div class="section-header" style="margin-top: 1.5rem;">CONTINUE ORDERING</div>
+    <div class="activity-list">
+        {% for draft in drafts %}
+        <a href="/customer/draft_pr/{{ draft.id }}" class="activity-item">
+            <div class="item-icon-wrapper blue-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </div>
+            <div class="item-content">
+                <span class="item-title">Draft Order #{{ draft.id }}</span>
+                <span class="item-subtitle">Resume your unsent order</span>
+            </div>
+            <div class="item-right">
+                <span class="status-badge">{{ draft.item_count }} ITEMS</span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

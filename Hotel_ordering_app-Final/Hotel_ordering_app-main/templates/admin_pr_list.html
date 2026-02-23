@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Mobile-first Card Styles */
+    .pr-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f1f5f9;
+        transition: transform 0.2s;
+        cursor: pointer;
+        display: block;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .pr-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .pr-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .pr-id {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #0f172a;
+    }
+
+    .status-pill {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+
+    .st-PR {
+        background: #eff6ff;
+        color: #3b82f6;
+    }
+
+    /* Blue */
+    .st-QT {
+        background: #fef9c3;
+        color: #a16207;
+    }
+
+    /* Yellow */
+    .st-ACCEPTED {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    /* Green */
+    .st-REJECTED {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    /* Red */
+    .st-PARTIALLY_ACCEPTED {
+        background: #ffedd5;
+        color: #9a3412;
+    }
+
+    /* Orange */
+    /* Purple — [NEW WORKFLOW ADDITION] Admin Price Review statuses */
+    .st-PENDING_PRICE_REVIEW {
+        background: #f3e8ff;
+        color: #6b21a8;
+    }
+
+    .st-INVOICED_DIRECT {
+        background: #dcfce7;
+        color: #14532d;
+    }
+
+    .customer-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 4px;
+    }
+
+    .pr-meta-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #f8fafc;
+    }
+
+    .amount {
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    /* Tabs */
+    .filter-tabs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        /* Hide scrollbar visual */
+        margin-bottom: 16px;
+        scrollbar-width: none;
+    }
+
+    .filter-tab {
+        white-space: nowrap;
+        padding: 8px 16px;
+        border-radius: 20px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid transparent;
+    }
+
+    .filter-tab.active {
+        background: #0f172a;
+        color: #fff;
+    }
+
+    .search-inputs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .search-bar {
+        flex: 1;
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        font-size: 0.95rem;
+        background: #f8fafc;
+    }
+</style>
+
+<div class="dashboard-header" style="margin-bottom: 1rem;">
+    <h1 style="font-size: 1.5rem;">Requests</h1>
+</div>
+
+{% if request.query_params.get('success') %}
+<div
+    style="background: #dcfce7; color: #166534; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #bbf7d0;">
+    {{ request.query_params.get('success') }}
+</div>
+{% endif %}
+
+{% if request.query_params.get('error') %}
+<div
+    style="background: #fee2e2; color: #991b1b; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #fecaca;">
+    {{ request.query_params.get('error') }}
+</div>
+{% endif %}
+
+<!-- Search & Filter -->
+<form method="GET" action="/admin/pr_list">
+    <div class="search-inputs">
+        <input type="text" name="search" class="search-bar" placeholder="Search by name, date, status..."
+            value="{{ search }}">
+        <!-- Hidden inputs to preserve other filters if needed, though tabs handle status -->
+    </div>
+</form>
+
+<!-- Tabs -->
+<div class="filter-tabs">
+    <a href="/admin/pr_list?status=" class="filter-tab {% if not status %}active{% endif %}">All</a>
+    <a href="/admin/pr_list?status=PR" class="filter-tab {% if status == 'PR' %}active{% endif %}">Pending</a>
+    <a href="/admin/pr_list?status=QT" class="filter-tab {% if status == 'QT' %}active{% endif %}">Sent</a>
+    <a href="/admin/pr_list?status=ACCEPTED"
+        class="filter-tab {% if status == 'ACCEPTED' %}active{% endif %}">Approved</a>
+    <a href="/admin/pr_list?status=PARTIALLY_ACCEPTED"
+        class="filter-tab {% if status == 'PARTIALLY_ACCEPTED' %}active{% endif %}">Partial</a>
+    <a href="/admin/pr_list?status=REJECTED"
+        class="filter-tab {% if status == 'REJECTED' %}active{% endif %}">Rejected</a>
+    {# [NEW WORKFLOW ADDITION] Admin Price Review tab #}
+    <a href="/admin/pr_list?status=PENDING_PRICE_REVIEW"
+        class="filter-tab {% if status == 'PENDING_PRICE_REVIEW' %}active{% endif %}"
+        style="border: 1px solid #d8b4fe;">
+        ⚙️ Price Review
+    </a>
+</div>
+
+<!-- PR List -->
+<div class="pr-list">
+    {% for pr in prs %}
+    {# [NEW WORKFLOW ADDITION] Route to price_review page for PENDING_PRICE_REVIEW PRs,
+    keep existing /admin/quotation route for all other statuses. #}
+    {% if pr.status == 'PENDING_PRICE_REVIEW' %}
+    <a href="/admin/price_review/{{ pr.id }}" class="pr-card">
+        {% elif pr.status == 'INVOICED_DIRECT' %}
+        <a href="/admin/price_review/{{ pr.id }}" class="pr-card">
+            {% else %}
+            <a href="/admin/quotation/{{ pr.id }}" class="pr-card">
+                {% endif %}
+                <div class="pr-header">
+                    <span class="pr-id">
+                        PR-{{ pr.created_at[:10]|replace('-', '') }}-{{ pr.id }}
+                    </span>
+                    <span class="status-pill st-{{ pr.status }}">
+                        {% if pr.status == 'PR' %}Pending
+                        {% elif pr.status == 'QT' %}Quote Sent
+                        {% elif pr.status == 'ACCEPTED' %}Approved
+                        {% elif pr.status == 'PARTIALLY_ACCEPTED' %}Partial
+                        {% elif pr.status == 'PENDING_PRICE_REVIEW' %}⚙️ Price Review
+                        {% elif pr.status == 'INVOICED_DIRECT' %}✅ Invoiced
+                        {% else %}{{ pr.status|title }}{% endif %}
+                    </span>
+                </div>
+
+                <div class="customer-name">{{ pr.business_name or pr.customer_name }}</div>
+
+                <div class="pr-meta-row">
+                    <div>{{ pr.created_at }}</div>
+                    <div>{{ pr.item_count }} Items</div>
+                </div>
+
+                <div class="pr-meta-row" style="border:none; padding-top: 4px; margin-top: 0;">
+                    <div style="color: #94a3b8; font-size: 0.8rem;">{{ pr.customer_email }}</div>
+                    <div class="amount">₹ {{ "{:,.2f}".format(pr.total_amount) }}</div>
+                </div>
+            </a>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: #64748b;">
+                <p>No requests found.</p>
+                <a href="/admin/pr_list" style="color: #3b82f6;">Clear Filters</a>
+            </div>
+            {% endfor %}
+</div>
+
+{% endblock %}

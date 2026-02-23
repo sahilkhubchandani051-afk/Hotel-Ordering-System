@@ -1,0 +1,655 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --accent-color: #f59e0b;
+        --accent-bg: #fffbe6;
+        --card-radius: 8px;
+        --transition: all 0.2s ease-in-out;
+        --text-primary: #1e293b;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+    }
+
+    .report-page {
+        padding: 0.75rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding-bottom: 80px;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1.25rem;
+        padding: 0.25rem 0;
+    }
+
+    .btn-back {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: #f1f5f9;
+        color: #475569;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: var(--transition);
+        border: 1px solid var(--border);
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    /* 2. Search & Filter Bar */
+    .search-filter-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 1.5rem;
+        width: 100%;
+    }
+
+    .search-container {
+        flex: 1;
+        position: relative;
+        display: flex;
+    }
+
+    .search-container i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        font-size: 0.95rem;
+        background: #fff;
+        transition: var(--transition);
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        outline: none;
+    }
+
+    .btn-filter-toggle {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        color: var(--text-primary);
+        transition: var(--transition);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+    }
+
+    /* 3. Bottom Sheet */
+    .bottom-sheet-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(2px);
+        z-index: 1000;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .bottom-sheet {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: -100%;
+        background: #fff;
+        border-radius: 24px 24px 0 0;
+        padding: 1.5rem;
+        z-index: 1001;
+        transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .bottom-sheet.active {
+        bottom: 0;
+    }
+
+    .bottom-sheet-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+
+    .sheet-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .sheet-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .handle {
+        width: 40px;
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        margin: -10px auto 15px auto;
+    }
+
+    .filter-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        font-size: 0.95rem;
+        background: #f8fafc;
+    }
+
+    .sheet-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .btn-sheet {
+        padding: 0.85rem;
+        border-radius: 14px;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .btn-apply-filters {
+        background: var(--accent-color);
+        color: #fff;
+    }
+
+    .btn-export-sheet {
+        background: #10b981;
+        color: #fff;
+    }
+
+    .btn-reset-sheet {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    /* Summary Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: #ffffff;
+        border-radius: var(--card-radius);
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--stat-color);
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    /* Modern Filter Bar */
+    .filter-card {
+        background: #ffffff;
+        border-radius: var(--card-radius);
+        padding: 0.75rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-form {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .filter-input-group {
+        flex: 1;
+        min-width: 200px;
+        position: relative;
+    }
+
+    .filter-input-group i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .filter-control {
+        width: 100%;
+        padding: 0.6rem 1rem 0.6rem 2.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        transition: var(--transition);
+        background: #f8fafc;
+    }
+
+    .filter-control:focus {
+        border-color: var(--accent-color);
+        background: #fff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    }
+
+    .btn-apply {
+        padding: 0.6rem 1.5rem;
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-apply:hover {
+        background: #d97706;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-reset {
+        padding: 0.6rem 1rem;
+        background: #f1f5f9;
+        color: var(--text-muted);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: var(--transition);
+        text-align: center;
+    }
+
+    /* Desktop Table */
+    .desktop-view {
+        background: #fff;
+        border-radius: var(--card-radius);
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .report-table th {
+        background: #f8fafc;
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .report-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+    }
+
+    .report-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .item-name {
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .item-marathi {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 400;
+        margin-top: 2px;
+    }
+
+    /* Mobile Cards */
+    .mobile-view {
+        display: none;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .sale-card {
+        background: #fff;
+        border-radius: var(--card-radius);
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        border-left: 5px solid var(--accent-color);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        transition: var(--transition);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+
+    .card-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .card-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+
+    .card-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .detail-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--text-muted);
+        letter-spacing: 0.05em;
+    }
+
+    .detail-value {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .customer-tag {
+        background: #f1f5f9;
+        padding: 0.5rem 0.75rem;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        margin-top: 0.75rem;
+        color: #475569;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .desktop-view {
+            display: none;
+        }
+
+        .mobile-view {
+            display: flex;
+        }
+    }
+</style>
+
+<div class="report-page">
+    <div class="page-header">
+        <a href="/admin/reports" class="btn-back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div class="header-title">
+            <h1>Item-wise Sales</h1>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card" style="--stat-color: #6366f1;">
+            <div class="stat-label">Sold</div>
+            <div class="stat-value" style="font-size: 1.25rem;">{{ total_qty }} Items</div>
+        </div>
+        <div class="stat-card" style="--stat-color: #f59e0b;">
+            <div class="stat-label">Revenue</div>
+            <div class="stat-value" style="font-size: 1.25rem;">₹{{ "{:,.0f}".format(total_amount) }}</div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="search-filter-wrapper">
+        <form method="GET" action="/admin/reports/item_sales" class="search-container" id="searchForm">
+            <i class="fas fa-search">🔍</i>
+            <input type="text" name="search" placeholder="Search Item or Customer" class="search-input"
+                value="{{ search }}">
+            <input type="hidden" name="item_name" value="{{ item_name }}">
+        </form>
+        <button class="btn-filter-toggle" onclick="toggleBottomSheet()" type="button">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Filter Bottom Sheet -->
+    <div class="bottom-sheet-overlay" id="sheetOverlay" onclick="toggleBottomSheet()"></div>
+    <div class="bottom-sheet" id="filterSheet">
+        <div class="handle"></div>
+        <div class="sheet-header">
+            <span class="sheet-title">Filters & Options</span>
+            <button onclick="toggleBottomSheet()" style="background:none; border:none; font-size: 1.5rem;">×</button>
+        </div>
+
+        <form method="GET" action="/admin/reports/item_sales">
+            <input type="hidden" name="search" value="{{ search }}">
+            <div class="filter-section">
+                <label class="filter-label">Filter by Item</label>
+                <select name="item_name" class="filter-select">
+                    <option value="">All Items</option>
+                    {% for name in item_name_list %}
+                    <option value="{{ name }}" {% if item_name==name %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="sheet-actions">
+                <button type="submit" class="btn-sheet btn-apply-filters">Apply Filters</button>
+                <button type="submit" name="export" value="true" class="btn-sheet btn-export-sheet">Export
+                    Excel</button>
+                <a href="/admin/reports/item_sales" class="btn-sheet btn-reset-sheet">Reset All</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Desktop Table -->
+    <div class="desktop-view">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Item Details</th>
+                    <th>Quantity</th>
+                    <th>Customer</th>
+                    <th>Rate</th>
+                    <th style="text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in sales %}
+                <tr>
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">{{ entry.date }}</td>
+                    <td>
+                        <span class="item-name">{{ entry.item_name }}</span>
+                        {% if entry.item_marathi %}
+                        <span class="item-marathi">{{ entry.item_marathi }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight: 700; color: #1e293b;">{{ entry.qty }} <small
+                            style="font-weight: 500; color: var(--text-muted);">{{ entry.unit }}</small></td>
+                    <td style="font-weight: 600;">{{ entry.business_name or entry.customer_name }}</td>
+                    <td style="color: #64748b;">₹{{ "%.2f"|format(entry.rate) }}</td>
+                    <td style="font-weight: 800; color: var(--accent-color); text-align: right;">₹{{
+                        "%.2f"|format(entry.amount) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile View -->
+    <div class="mobile-view">
+        {% for entry in sales %}
+        <div class="sale-card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">{{ entry.item_name }}</h3>
+                    <div class="card-meta">{{ entry.date }}</div>
+                    {% if entry.item_marathi %}
+                    <div style="font-size: 0.8rem; color: #64748b; font-style: italic;">{{ entry.item_marathi }}</div>
+                    {% endif %}
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.1rem; font-weight: 800; color: var(--accent-color);">₹{{
+                        "%.2f"|format(entry.amount) }}</div>
+                </div>
+            </div>
+
+            <div class="card-details">
+                <div class="detail-item">
+                    <span class="detail-label">Quantity</span>
+                    <span class="detail-value">{{ entry.qty }} {{ entry.unit }}</span>
+                </div>
+                <div class="detail-item" style="text-align: right;">
+                    <span class="detail-label">Unit Rate</span>
+                    <span class="detail-value">₹{{ "%.2f"|format(entry.rate) }}</span>
+                </div>
+            </div>
+
+            <div class="customer-tag">
+                <span style="opacity: 0.6; font-size: 0.7rem; text-transform: uppercase;">Customer:</span>
+                {{ entry.business_name or entry.customer_name }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Empty States -->
+    {% if not sales %}
+    <div class="empty-state"
+        style="text-align: center; padding: 4rem 1.5rem; background: #fff; border-radius: var(--card-radius); border: 2px dashed #e2e8f0; color: #94a3b8; margin-top: 1rem;">
+        <div style="font-size: 3.5rem; margin-bottom: 1rem;">📈</div>
+        <h3 style="font-weight: 800; color: var(--text-primary);">No sales found</h3>
+        <p style="font-size: 0.9rem;">Try adjusting your filters or search to find what you're looking for.</p>
+    </div>
+    {% endif %}
+
+    <script>
+        function toggleBottomSheet() {
+            const sheet = document.getElementById('filterSheet');
+            const overlay = document.getElementById('sheetOverlay');
+            sheet.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+    </script>
+</div>
+{% endblock %}
