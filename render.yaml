@@ -3,13 +3,16 @@ services:
   - type: web
     name: hotel-ordering-app
     runtime: python
-    pythonVersion: "3.12"
+    # pythonVersion: "3.12"
     region: oregon
     plan: free
     rootDir: Hotel_ordering_app-main
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
+      envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: DATABASE_URL
