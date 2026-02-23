@@ -43,9 +43,9 @@ services:
       sizeGB: 1
 
   # PostgreSQL Database
-  # - type: pserv
-  #   name: hotel_db
-  #   plan: free
-  #   region: oregon
-  #   databaseName: hotel_db
-  #   user: hotel_user
+  - type: pserv
+    name: hotel_db
+    plan: free
+    region: oregon
+    databaseName: hotel_db
+    user: hotel_user
