@@ -1,51 +1,23 @@
 services:
+  # FastAPI Web Service
   - type: web
-    name: hotel-ordering-system
-    env: docker
+    name: hotel-ordering-app
+    runtime: python
+    region: oregon
     plan: free
-    
-    # Dockerfile handles the start command, but we can override or be explicit here if needed.
-    # Since Dockerfile has the correct CMD, we don't strictkly need this, 
-    # but Render sometimes defaults to python command if logic is fuzzy.
-    # It's safest to rely on the Dockerfile's CMD.
-
+    rootDir: Hotel_ordering_app-main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: SESSION_SECRET_KEY
-        generateValue: true
-
-      - key: ADMIN_EMAIL
-        value: admin@hotel.com
-
-      - key: ADMIN_PASSWORD
-        value: admin123
-
-      - key: ENVIRONMENT
-        value: production
-
-      - key: APP_BASE_URL
-        sync: false # Set this in Render Dashboard to your .onrender.com URL
-
-      # Supabase Configuration (Sync=false implies you should set these in dashboard)
-      - key: SUPABASE_URL
-        sync: false
-      
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-
       - key: DATABASE_URL
         fromDatabase:
           name: hotel_db
           property: connectionString
-
-    disk:
-      name: hotel_db_disk
-      mountPath: /app/data
-      sizeGB: 1
 
   # PostgreSQL Database
   - type: pserv
     name: hotel_db
     plan: free
     region: oregon
-    # databaseName: hotel_db
-    # user: hotel_user
