@@ -9,7 +9,7 @@ supabase==2.0.3
 psycopg2-binary==2.9.9
 
 # Data Processing
-pandas
+pandas==2.2.2
 openpyxl==3.1.2
 
 # Push Notifications
