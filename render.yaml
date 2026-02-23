@@ -16,8 +16,7 @@ services:
           name: hotel_db
           property: connectionString
 
-  # PostgreSQL Database
-  - type: pserv
-    name: hotel_db
+databases:
+  - name: hotel_db
     plan: free
     region: oregon
